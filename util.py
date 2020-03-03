@@ -9,7 +9,7 @@ from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer 
 from sklearn.utils import resample
 from sklearn.utils import shuffle
-from variables import  h5_file, bias
+from variables import  h5_file, bias, csv_path
 
 user2cloth = {}
 cloth2user = {}
@@ -19,7 +19,7 @@ usercloth2rating_test = {}
 def get_data():
     if not os.path.exists("train_upsample.csv") or not os.path.exists("test.csv"):
         print("Upsampling data !!!")
-        df = pd.read_csv('Womens Clothing E-Commerce Reviews.csv')
+        df = pd.read_csv(csv_path)
         data = df[['Review Text','Recommended IND']]
         data['PreProcessed Text'] = data.apply(Add_dataframe_column, axis=1)
         upsample_data(data)
@@ -144,7 +144,7 @@ def balance_test_data(reviews,labels):
     return reviews , labels
 
 def get_update_data():
-    df = pd.read_csv('Womens Clothing E-Commerce Reviews.csv')
+    df = pd.read_csv(csv_path)
     data = df[['ID','Clothing ID','Rating']]
 
     data = shuffle(data)
