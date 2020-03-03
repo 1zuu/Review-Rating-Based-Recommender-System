@@ -17,13 +17,13 @@ usercloth2rating = {}
 usercloth2rating_test = {}
 
 def get_data():
-    if not os.path.exists("train_upsample.csv") or not os.path.exists("test.csv"):
+    if not os.path.exists("train.csv") or not os.path.exists("test.csv"):
         print("Upsampling data !!!")
         df = pd.read_csv(csv_path)
         data = df[['Review Text','Recommended IND']]
         data['PreProcessed Text'] = data.apply(Add_dataframe_column, axis=1)
         upsample_data(data)
-    train_data = pd.read_csv('train_upsample.csv')
+    train_data = pd.read_csv('train.csv')
     test_data  = pd.read_csv('test.csv')
 
     train_labels  = np.array(train_data['Recommended IND'],dtype=np.int32)
@@ -111,7 +111,7 @@ def upsample_data(data):
 
     train_data_upsampled = train_data_upsampled.dropna(axis = 0, how ='any')
     test = test.dropna(axis = 0, how ='any')
-    train_data_upsampled.to_csv('train_upsample.csv', encoding='utf-8', index=False)
+    train_data_upsampled.to_csv('train.csv', encoding='utf-8', index=False)
     test.to_csv('test.csv', encoding='utf-8', index=False)
 
 def preprocessed_data(reviews):
