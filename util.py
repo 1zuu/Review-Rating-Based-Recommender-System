@@ -9,7 +9,7 @@ from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer 
 from sklearn.utils import resample
 from sklearn.utils import shuffle
-from variables import  h5_file, bias, csv_path
+from variables import bias, csv_path
 
 user2cloth = {}
 cloth2user = {}
@@ -143,6 +143,14 @@ def balance_test_data(reviews,labels):
     reviews , labels = shuffle(np.concatenate((reviews1,negative_reviews)),np.concatenate((labels1,negative_labels)))
     return reviews , labels
 
+def get_reviews_for_id(cloth_id):
+    data = pd.read_csv(csv_path)
+    cloth_id_data = data[data['Clothing ID'] == cloth_id]
+    reviews = cloth_id_data['Review Text']
+    labels = cloth_id_data['Recommended IND']
+    return reviews.to_numpy(), labels.to_numpy()
+    
+
 def get_update_data():
     df = pd.read_csv(csv_path)
     data = df[['ID','Clothing ID','Rating']]
@@ -191,3 +199,4 @@ def get_update_data():
     with open('usercloth2rating_test.json', 'wb') as f:
         pkl.dump(usercloth2rating_test, f)
 
+get_data()

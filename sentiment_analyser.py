@@ -12,12 +12,12 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import model_from_json
 from sklearn.model_selection import train_test_split
 from keras.layers import Input, Embedding, LSTM, Dense, Bidirectional, Dropout
-from keras.models import Model
+from keras.models import Sequential
 from variables import * 
 from util import preprocessed_data
 
-np.random.seed(42)
-tf.compat.v1.set_random_seed(42)
+np.random.seed(seed)
+tf.compat.v1.set_random_seed(seed)
 
 class myCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
@@ -44,23 +44,24 @@ class SentimentAnalyser:
         self.tokenizer = tokenizer
     
     def embedding_model(self):
-        pad_input = Input(shape=(max_length,), dtype='int32', name='pad_inputs')
-        embeddings = Embedding(output_dim=embedding_dim, input_dim=vocab_size, input_length=max_length)(pad_input)
-        lstm_out = Bidirectional(LSTM(size_lstm))(embeddings)
-        x = Dense(64, activation='relu')(lstm_out)
-        x = Dense(64, activation='relu')(x)
-        x = Dense(64, activation='relu')(x)
-        main_output = Dense(1, activation='sigmoid', name='main_output')(x)
 
-        self.model = Model(inputs=pad_input, outputs=main_output)
+        model = Sequential()
+        model.add(Embedding(output_dim=embedding_dim, input_dim=vocab_size, input_length=max_length))
+        model.add(Bidirectional(LSTM(size_lstm)))
+        model.add(Dense(size_dense, activation='relu'))
+        model.add(Dense(size_dense, activation='relu'))
+        model.add(Dense(size_dense, activation='relu'))
+        model.add(Dense(size_output, activation='sigmoid'))
+        
+        self.model = model
 
     def load_model(self):
-        json_file = open('model.json', 'r')
+        json_file = open(sentiment_path, 'r')
         loaded_model_json = json_file.read()
         json_file.close()
         loaded_model = model_from_json(loaded_model_json)
-        loaded_model.load_weights("model.h5")
-        loaded_model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+        loaded_model.load_weights(sentiment_weights)
+        loaded_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
         self.model = loaded_model
 
     def train_model(self,bias):
@@ -81,16 +82,23 @@ class SentimentAnalyser:
 
     def save_model(self):
         model_json = self.model.to_json()
-        with open("model.json", "w") as json_file:
+        with open(sentiment_path, "w") as json_file:
             json_file.write(model_json)
-        self.model.save_weights("model.h5")
+        self.model.save_weights(sentiment_weights)
 
     def predict(self,reviews,labels):
         updated_reviews = preprocessed_data(reviews)
         sequence_data = self.tokenizer.texts_to_sequences(updated_reviews)
         padded_data = pad_sequences(sequence_data, maxlen=max_length)
         if len(padded_data) == 1:
-            print(self.model.evaluate(padded_data,np.array([labels])))
+            loss, accuracy = self.model.evaluate(padded_data,np.array([labels]))
+            P = self.model.predict(np.array(reviews))
         else:
-            print(self.model.evaluate(padded_data,labels))
+            loss, accuracy = self.model.evaluate(padded_data,labels)
+            P = self.model.predict(reviews)
+        print("Val_loss: ",loss)
+        print("Val_accuracy: ",accuracy)
+        print("predictions: ",P)
+
+    
 
