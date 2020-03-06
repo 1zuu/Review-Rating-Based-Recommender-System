@@ -4,17 +4,18 @@ import random
 import os
 import numpy as np
 import pandas as pd
-import tensorflow as tf 
+import tensorflow as tf
 from sklearn.utils import shuffle
-from tensorflow import keras	
+from tensorflow import keras
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import model_from_json
 from sklearn.model_selection import train_test_split
 from keras.layers import Input, Embedding, LSTM, Dense, Bidirectional, Dropout
 from keras.models import Sequential
-from variables import * 
+from variables import *
 from util import preprocessed_data
+from collections import Counter
 
 np.random.seed(seed)
 tf.compat.v1.set_random_seed(seed)
@@ -30,7 +31,7 @@ class SentimentAnalyser:
         self.Xtrain = Xtrain
         self.Ytrain = Ytrain
         self.Xtest  = Xtest
-        self.Ytest  = Ytest        
+        self.Ytest  = Ytest
 
     def tokenizing_data(self):
         tokenizer = Tokenizer(num_words = vocab_size, oov_token=oov_tok)
@@ -42,17 +43,18 @@ class SentimentAnalyser:
         Xtest_seq  = tokenizer.texts_to_sequences(self.Xtest)
         self.Xtest_pad = pad_sequences(Xtest_seq, maxlen=max_length)
         self.tokenizer = tokenizer
-    
+
     def embedding_model(self):
 
         model = Sequential()
         model.add(Embedding(output_dim=embedding_dim, input_dim=vocab_size, input_length=max_length))
-        model.add(Bidirectional(LSTM(size_lstm)))
+        model.add(Bidirectional(LSTM(size_lstm1,return_sequences=True)))
+        model.add(Bidirectional(LSTM(size_lstm2)))
         model.add(Dense(size_dense, activation='relu'))
         model.add(Dense(size_dense, activation='relu'))
         model.add(Dense(size_dense, activation='relu'))
         model.add(Dense(size_output, activation='sigmoid'))
-        
+
         self.model = model
 
     def load_model(self):
@@ -92,13 +94,16 @@ class SentimentAnalyser:
         padded_data = pad_sequences(sequence_data, maxlen=max_length)
         if len(padded_data) == 1:
             loss, accuracy = self.model.evaluate(padded_data,np.array([labels]))
-            P = self.model.predict(np.array(reviews))
         else:
             loss, accuracy = self.model.evaluate(padded_data,labels)
-            P = self.model.predict(reviews)
+        P = (self.model.predict(padded_data) > 0.5)
+        sentiment_score = self.sentiment_score(P)
         print("Val_loss: ",loss)
         print("Val_accuracy: ",accuracy)
-        print("predictions: ",P)
+        print("sentiment_score: ",sentiment_score)
 
-    
-
+    def sentiment_score(self,P):
+        sentiment_count = Counter([y[0] for y in P])
+        positive_count = sentiment_count[1]
+        negative_count = sentiment_count[0]
+        return positive_count / (positive_count + negative_count)

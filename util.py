@@ -2,14 +2,14 @@ import re
 import os
 import pandas as pd
 import numpy as np
-import pickle as pkl 
+import pickle as pkl
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 from nltk import word_tokenize
-from nltk.stem import WordNetLemmatizer 
+from nltk.stem import WordNetLemmatizer
 from sklearn.utils import resample
 from sklearn.utils import shuffle
-from variables import bias, csv_path
+from variables import csv_path, preprocessed_path
 
 user2cloth = {}
 cloth2user = {}
@@ -17,12 +17,18 @@ usercloth2rating = {}
 usercloth2rating_test = {}
 
 def get_data():
+    global csv_path
+    print("data path : {}".format(csv_path))
     if not os.path.exists("train.csv") or not os.path.exists("test.csv"):
         print("Upsampling data !!!")
         df = pd.read_csv(csv_path)
-        data = df[['Review Text','Recommended IND']]
+        df = df[['Clothing ID','Review Text','Recommended IND','Rating']]
+        data = drop_nan(df)
+        data.to_csv(preprocessed_path, encoding='utf-8', index=True)
         data['PreProcessed Text'] = data.apply(Add_dataframe_column, axis=1)
         upsample_data(data)
+        csv_path = preprocessed_path
+
     train_data = pd.read_csv('train.csv')
     test_data  = pd.read_csv('test.csv')
 
@@ -42,8 +48,11 @@ def lemmatization(lemmatizer,sentence):
 def remove_stop_words(stopwords_list,sentence):
     return [k for k in sentence if k not in stopwords_list]
 
+def drop_nan(data):
+    return data.dropna(axis = 0, how ='any')
+
 def preprocess_one(review):
-    lemmatizer = WordNetLemmatizer() 
+    lemmatizer = WordNetLemmatizer()
     tokenizer = RegexpTokenizer(r'\w+')
     stopwords_list = stopwords.words('english')
     review = review.lower()
@@ -57,7 +66,7 @@ def preprocess_one(review):
 
 def Add_dataframe_column(x):
     review = str(x['Review Text'])
-    lemmatizer = WordNetLemmatizer() 
+    lemmatizer = WordNetLemmatizer()
     tokenizer = RegexpTokenizer(r'\w+')
     stopwords_list = stopwords.words('english')
     review = review.lower()
@@ -75,7 +84,7 @@ def upsample_data(data):
 
     # bias = data_minority.shape[0]/data_majority.shape[0]
 
-    # lets split train/test data first then 
+    # lets split train/test data first then
     train = pd.concat([data_majority.sample(frac=0.8,random_state=200),
             data_minority.sample(frac=0.8,random_state=200)])
     test = pd.concat([data_majority.drop(data_majority.sample(frac=0.8,random_state=200).index),
@@ -89,7 +98,7 @@ def upsample_data(data):
     print('positive data in test:',(test['Recommended IND'] == 1).sum())
     print('negative data in test:',(test['Recommended IND'] == 0).sum())
 
-    # Separate majority and minority classes in training data for up sampling 
+    # Separate majority and minority classes in training data for up sampling
     data_majority = train[train['Recommended IND'] == 1]
     data_minority = train[train['Recommended IND'] == 0]
 
@@ -97,20 +106,21 @@ def upsample_data(data):
     print("minority class before upsample:",data_minority.shape)
 
     # Upsample minority class
-    data_minority_upsampled = resample(data_minority, 
+    data_minority_upsampled = resample(data_minority,
                                     replace=True,     # sample with replacement
                                     n_samples= data_majority.shape[0],    # to match majority class
                                     random_state=42) # reproducible results
-    
+
     # Combine majority class with upsampled minority class
     train_data_upsampled = pd.concat([data_majority, data_minority_upsampled])
-    
+
     # Display new class counts
     print("After upsampling\n",train_data_upsampled['Recommended IND'].value_counts(),sep = "")
     train_data_upsampled = shuffle(train_data_upsampled)
 
     train_data_upsampled = train_data_upsampled.dropna(axis = 0, how ='any')
     test = test.dropna(axis = 0, how ='any')
+    print(len(train_data_upsampled)+len(test))
     train_data_upsampled.to_csv('train.csv', encoding='utf-8', index=False)
     test.to_csv('test.csv', encoding='utf-8', index=False)
 
@@ -143,13 +153,20 @@ def balance_test_data(reviews,labels):
     reviews , labels = shuffle(np.concatenate((reviews1,negative_reviews)),np.concatenate((labels1,negative_labels)))
     return reviews , labels
 
-def get_reviews_for_id(cloth_id):
+def get_reviews_for_id():
     data = pd.read_csv(csv_path)
-    cloth_id_data = data[data['Clothing ID'] == cloth_id]
-    reviews = cloth_id_data['Review Text']
-    labels = cloth_id_data['Recommended IND']
+    cloth_ids = data['Clothing ID']
+    while True:
+        cloth_id = int(input("Enter cloth Id :"))
+        if cloth_id < max(cloth_ids) + 1:
+            cloth_id_data = data[data['Clothing ID'] == cloth_id]
+            reviews = cloth_id_data['Review Text']
+            labels = cloth_id_data['Recommended IND']
+            break
+        print("Please enter cloth ID below 1206 !")
+
     return reviews.to_numpy(), labels.to_numpy()
-    
+
 
 def get_update_data():
     df = pd.read_csv(csv_path)
@@ -198,5 +215,3 @@ def get_update_data():
 
     with open('usercloth2rating_test.json', 'wb') as f:
         pkl.dump(usercloth2rating_test, f)
-
-get_data()

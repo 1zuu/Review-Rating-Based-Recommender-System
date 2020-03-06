@@ -1,6 +1,6 @@
 from sentiment_analyser import SentimentAnalyser
-from util import balance_test_data, get_data, get_reviews_for_id
-from variables import bias,sentiment_path,sentiment_weights
+from util import get_data, get_reviews_for_id
+from variables import bias,sentiment_path,sentiment_weights, seed
 import os
 
 current_dir = os.getcwd()
@@ -20,7 +20,5 @@ if __name__ == "__main__":
         analyser.train_model(bias)
         analyser.save_model()
 
-    # reviews,labels = balance_test_data(test_reviews,test_labels)
-    # analyser.predict(reviews[np.random.choice(len(reviews))],labels[np.random.choice(len(reviews))])
-    reviews, labels = get_reviews_for_id(767)
-    analyser.predict(reviews[0],labels)
+    reviews, labels = get_reviews_for_id()
+    analyser.predict(reviews,labels)
