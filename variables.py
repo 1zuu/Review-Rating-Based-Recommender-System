@@ -15,7 +15,8 @@ size_output = 1
 bias = 0.21600911256083669
 
 #Recommender System data
-movie_count_threshold = 25
+cloth_count_threshold = 25
+max_neighbor = 5
 
 #Data paths and weights
 train_data_path = 'train.csv'

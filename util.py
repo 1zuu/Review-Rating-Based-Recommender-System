@@ -9,7 +9,7 @@ from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from sklearn.utils import resample
 from sklearn.utils import shuffle
-from variables import train_data_path, test_data_path, movie_count_threshold, preprocessed_eclothing_data, preprocessed_sentiment_data, preprocessed_recommender_data, eclothing_data
+from variables import train_data_path, test_data_path, cloth_count_threshold, preprocessed_eclothing_data, preprocessed_sentiment_data, preprocessed_recommender_data, eclothing_data
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 from collections import Counter
@@ -160,6 +160,15 @@ def get_reviews_for_id():
 
     return reviews.to_numpy(), labels.to_numpy()
 
+def get_user_id():
+    data = pd.read_csv(preprocessed_recommender_data)
+    user_ids = set(data['USER ID'])
+    while True:
+        user_id = int(input("Enter user Id :"))
+        if user_id in user_ids:
+            return user_id
+        print("Please enter Valid User ID below !")
+
 def get_newId_on_oldId(data,cloth_id):
     idx = data['Clothing ID'].values.tolist().index(cloth_id)
     if data['ID'][idx] != data['USER ID'][idx]:
@@ -201,10 +210,11 @@ def create_new_user_ids():
 def get_recommendation_data():
     if not os.path.exists(preprocessed_recommender_data):
         df = pd.read_csv(preprocessed_eclothing_data)
-        data = df.copy()[['ID','USER ID','Clothing ID','Rating']]
+        data = df.copy()
+        data.drop(['Review Text', 'Recommended IND'], axis=1, inplace=True)
         filter_data = cloth_rating_distrubution(data,False)
     filter_data = pd.read_csv(preprocessed_recommender_data)
-    movie_user_matrix(filter_data)
+    return movie_user_matrix(filter_data)
 
 def cloth_rating_distrubution(data,show_fig=True):
     cloth_ids = data['Clothing ID']
@@ -214,19 +224,27 @@ def cloth_rating_distrubution(data,show_fig=True):
         all_counts.sort(reverse = True)
         plt.plot(np.array(all_counts))
         plt.show()
-    filter_cloths  = np.array([k for k,v in cloth_rating_counts.items() if int(v) >= movie_count_threshold])
+    filter_cloths  = np.array([k for k,v in cloth_rating_counts.items() if int(v) >= cloth_count_threshold])
     filter_data = data.copy().loc[data['Clothing ID'].isin(filter_cloths)]
-    filter_data.to_csv(preprocessed_recommender_data, encoding='utf-8', index=False)
+    rename_cloth_ids(filter_data)
+    filter_data.to_csv(preprocessed_recommender_data, encoding='utf-8', index=True)
     return filter_data
 
+def rename_cloth_ids(filter_data):
+    cloth_ids = filter_data['Clothing ID']
+    unique_ids = set(cloth_ids)
+    id_map = {cloth_id:i for i,cloth_id in enumerate(unique_ids)}
+    def update_cloth_ids(row, id_map=id_map):
+        x = row['Clothing ID']
+        return id_map[x]
+    filter_data['New Clothing ID'] = filter_data.apply(update_cloth_ids, axis=1)
+
 def movie_user_matrix(filter_data):
-    pivot = pd.pivot_table(filter_data, index='Clothing ID', columns='USER ID', values='Rating')
+    pivot = pd.pivot_table(filter_data, index='New Clothing ID', columns='USER ID', values='Rating')
     pivot.dropna(axis=1, how='all', inplace=True)
     pivot_norm = pivot.apply(lambda x: x - np.nanmean(x), axis=1)
     pivot_norm.fillna(0, inplace=True)
     similarity_df = pd.DataFrame(cosine_similarity(pivot_norm, pivot_norm),
                               index=pivot_norm.index,
                               columns=pivot_norm.index)
-
-get_sentiment_data()
-get_recommendation_data()
+    return similarity_df, pivot_norm, pivot
