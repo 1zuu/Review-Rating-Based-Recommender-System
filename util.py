@@ -9,28 +9,24 @@ from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from sklearn.utils import resample
 from sklearn.utils import shuffle
-from variables import csv_path, preprocessed_path
+from variables import train_data_path, test_data_path, movie_count_threshold, preprocessed_eclothing_data, preprocessed_sentiment_data, preprocessed_recommender_data, eclothing_data
+from sklearn.metrics.pairwise import cosine_similarity
+import matplotlib.pyplot as plt
+from collections import Counter
 
-user2cloth = {}
-cloth2user = {}
-usercloth2rating = {}
-usercloth2rating_test = {}
-
-def get_data():
-    global csv_path
-    print("data path : {}".format(csv_path))
-    if not os.path.exists("train.csv") or not os.path.exists("test.csv"):
+def get_sentiment_data():
+    global train_data_path, test_data_path
+    if not os.path.exists(eclothing_data):
+        create_new_user_ids()
+    if not os.path.exists(train_data_path) or not os.path.exists(test_data_path) or not os.path.exists(preprocessed_sentiment_data):
         print("Upsampling data !!!")
-        df = pd.read_csv(csv_path)
-        df = df[['Clothing ID','Review Text','Recommended IND','Rating']]
-        data = drop_nan(df)
-        data.to_csv(preprocessed_path, encoding='utf-8', index=True)
-        data['PreProcessed Text'] = data.apply(Add_dataframe_column, axis=1)
+        df = pd.read_csv(preprocessed_eclothing_data)
+        data = df.copy()[['ID','USER ID','Clothing ID','Review Text','Recommended IND']]
+        data.to_csv(preprocessed_sentiment_data, encoding='utf-8', index=True)
+        data['PreProcessed Text'] = data.apply(preprocessed_text_column, axis=1)
         upsample_data(data)
-        csv_path = preprocessed_path
-
-    train_data = pd.read_csv('train.csv')
-    test_data  = pd.read_csv('test.csv')
+    train_data = pd.read_csv(train_data_path)
+    test_data  = pd.read_csv(test_data_path)
 
     train_labels  = np.array(train_data['Recommended IND'],dtype=np.int32)
     test_labels   = np.array(test_data['Recommended IND'],dtype=np.int32)
@@ -48,9 +44,6 @@ def lemmatization(lemmatizer,sentence):
 def remove_stop_words(stopwords_list,sentence):
     return [k for k in sentence if k not in stopwords_list]
 
-def drop_nan(data):
-    return data.dropna(axis = 0, how ='any')
-
 def preprocess_one(review):
     lemmatizer = WordNetLemmatizer()
     tokenizer = RegexpTokenizer(r'\w+')
@@ -64,7 +57,7 @@ def preprocess_one(review):
     updated_review = ' '.join(remove_stop)
     return updated_review
 
-def Add_dataframe_column(x):
+def preprocessed_text_column(x):
     review = str(x['Review Text'])
     lemmatizer = WordNetLemmatizer()
     tokenizer = RegexpTokenizer(r'\w+')
@@ -120,9 +113,8 @@ def upsample_data(data):
 
     train_data_upsampled = train_data_upsampled.dropna(axis = 0, how ='any')
     test = test.dropna(axis = 0, how ='any')
-    print(len(train_data_upsampled)+len(test))
-    train_data_upsampled.to_csv('train.csv', encoding='utf-8', index=False)
-    test.to_csv('test.csv', encoding='utf-8', index=False)
+    train_data_upsampled.to_csv(train_data_path, encoding='utf-8', index=False)
+    test.to_csv(test_data_path, encoding='utf-8', index=False)
 
 def preprocessed_data(reviews):
     updated_reviews = []
@@ -154,11 +146,12 @@ def balance_test_data(reviews,labels):
     return reviews , labels
 
 def get_reviews_for_id():
-    data = pd.read_csv(csv_path)
+    data = pd.read_csv(preprocessed_sentiment_data)
     cloth_ids = data['Clothing ID']
     while True:
         cloth_id = int(input("Enter cloth Id :"))
         if cloth_id < max(cloth_ids) + 1:
+            get_newId_on_oldId(data,cloth_id)
             cloth_id_data = data[data['Clothing ID'] == cloth_id]
             reviews = cloth_id_data['Review Text']
             labels = cloth_id_data['Recommended IND']
@@ -167,51 +160,73 @@ def get_reviews_for_id():
 
     return reviews.to_numpy(), labels.to_numpy()
 
+def get_newId_on_oldId(data,cloth_id):
+    idx = data['Clothing ID'].values.tolist().index(cloth_id)
+    if data['ID'][idx] != data['USER ID'][idx]:
+        print("for the cloth ID: {} \nOld user Id: {} and New user Id: {}".format(cloth_id,data['ID'][idx],data['USER ID'][idx]))
 
-def get_update_data():
-    df = pd.read_csv(csv_path)
-    data = df[['ID','Clothing ID','Rating']]
+def create_new_user_ids():
+    data = pd.read_csv(eclothing_data)
+    data['Review Text'] = data['Review Text'].fillna('Missing Reviews')
+    data['Recommended IND'] = data['Recommended IND'].fillna(np.random.choice([0,1]))
+    data['Rating'] = data['Rating'].fillna(np.random.choice([1.0,2.0,3.0,4.0,5.0]))
+    data.drop(['Positive Feedback Count', 'Title'], axis=1, inplace=True)
+    filter_data  = data.dropna(axis = 0, how ='any')
 
-    data = shuffle(data)
-    train_set = int(0.8 * len(df))
-    df_train = data.iloc[:train_set]
-    df_test  = data.iloc[train_set:]
+    devision_name = filter_data['Division Name'].to_numpy()
+    department_name = filter_data['Department Name'].to_numpy()
+    class_name = filter_data['Class Name'].to_numpy()
+    age = filter_data['Age'].to_numpy()
 
-    def update_dictionaries(row):
-        i = int(row['ID'])
-        j = int(row['Clothing ID'])
-        r = float(row['Rating'])
+    new_ids = {}
+    id_idx = 0
+    user_data = [(devision_name[i], department_name[i], class_name[i], age[i]) for i in range(len(filter_data))]
+    for ud in user_data:
+        if not ud in new_ids:
+           new_ids[ud] = id_idx
+           id_idx += 1
 
-        if i not in user2cloth:
-            user2cloth[i] = [j]
-        else:
-            user2cloth[i].append(j)
+    def user_id_row(row, new_ids=new_ids):
+        devision_name = row['Division Name']
+        department_name = row['Department Name']
+        class_name = row['Class Name']
+        age = row['Age']
 
-        if j not in cloth2user:
-            cloth2user[j] = [i]
-        else:
-            cloth2user[j].append(i)
+        user_tuple = (devision_name, department_name, class_name, age)
+        return int(new_ids[user_tuple])
 
-        usercloth2rating[(i,j)] = r
+    filter_data['USER ID'] = filter_data.apply(user_id_row, axis=1)
+    filter_data.to_csv(preprocessed_eclothing_data, encoding='utf-8', index=False)
 
-    def update_test_data(row):
-        i = int(row['ID'])
-        j = int(row['Clothing ID'])
-        r = float(row['Rating'])
-        usercloth2rating_test[(i,j)] = r
+def get_recommendation_data():
+    if not os.path.exists(preprocessed_recommender_data):
+        df = pd.read_csv(preprocessed_eclothing_data)
+        data = df.copy()[['ID','USER ID','Clothing ID','Rating']]
+        filter_data = cloth_rating_distrubution(data,False)
+    filter_data = pd.read_csv(preprocessed_recommender_data)
+    movie_user_matrix(filter_data)
 
-    df_train.apply(update_dictionaries, axis=1)
-    df_test.apply(update_test_data, axis=1)
+def cloth_rating_distrubution(data,show_fig=True):
+    cloth_ids = data['Clothing ID']
+    cloth_rating_counts = Counter(cloth_ids)
+    if show_fig:
+        all_counts = list(cloth_rating_counts.values())
+        all_counts.sort(reverse = True)
+        plt.plot(np.array(all_counts))
+        plt.show()
+    filter_cloths  = np.array([k for k,v in cloth_rating_counts.items() if int(v) >= movie_count_threshold])
+    filter_data = data.copy().loc[data['Clothing ID'].isin(filter_cloths)]
+    filter_data.to_csv(preprocessed_recommender_data, encoding='utf-8', index=False)
+    return filter_data
 
+def movie_user_matrix(filter_data):
+    pivot = pd.pivot_table(filter_data, index='Clothing ID', columns='USER ID', values='Rating')
+    pivot.dropna(axis=1, how='all', inplace=True)
+    pivot_norm = pivot.apply(lambda x: x - np.nanmean(x), axis=1)
+    pivot_norm.fillna(0, inplace=True)
+    similarity_df = pd.DataFrame(cosine_similarity(pivot_norm, pivot_norm),
+                              index=pivot_norm.index,
+                              columns=pivot_norm.index)
 
-    with open('user2cloth.json', 'wb') as f:
-        pkl.dump(user2cloth, f)
-
-    with open('cloth2user.json', 'wb') as f:
-        pkl.dump(cloth2user, f)
-
-    with open('usercloth2rating.json', 'wb') as f:
-        pkl.dump(usercloth2rating, f)
-
-    with open('usercloth2rating_test.json', 'wb') as f:
-        pkl.dump(usercloth2rating_test, f)
+get_sentiment_data()
+get_recommendation_data()
