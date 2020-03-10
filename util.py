@@ -16,7 +16,7 @@ from collections import Counter
 
 def get_sentiment_data():
     global train_data_path, test_data_path
-    if not os.path.exists(eclothing_data):
+    if not os.path.exists(preprocessed_eclothing_data):
         create_new_user_ids()
     if not os.path.exists(train_data_path) or not os.path.exists(test_data_path) or not os.path.exists(preprocessed_sentiment_data):
         print("Upsampling data !!!")
