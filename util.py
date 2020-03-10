@@ -22,8 +22,8 @@ def get_sentiment_data():
         print("Upsampling data !!!")
         df = pd.read_csv(preprocessed_eclothing_data)
         data = df.copy()[['ID','USER ID','Clothing ID','Review Text','Recommended IND']]
-        data.to_csv(preprocessed_sentiment_data, encoding='utf-8', index=True)
         data['PreProcessed Text'] = data.apply(preprocessed_text_column, axis=1)
+        data.to_csv(preprocessed_sentiment_data, encoding='utf-8', index=False)
         upsample_data(data)
     train_data = pd.read_csv(train_data_path)
     test_data  = pd.read_csv(test_data_path)
@@ -57,8 +57,8 @@ def preprocess_one(review):
     updated_review = ' '.join(remove_stop)
     return updated_review
 
-def preprocessed_text_column(x):
-    review = str(x['Review Text'])
+def preprocessed_text_column(row):
+    review = str(row['Review Text'])
     lemmatizer = WordNetLemmatizer()
     tokenizer = RegexpTokenizer(r'\w+')
     stopwords_list = stopwords.words('english')
@@ -100,9 +100,9 @@ def upsample_data(data):
 
     # Upsample minority class
     data_minority_upsampled = resample(data_minority,
-                                    replace=True,     # sample with replacement
-                                    n_samples= data_majority.shape[0],    # to match majority class
-                                    random_state=42) # reproducible results
+                                      replace=True,     # sample with replacement
+                                      n_samples= data_majority.shape[0],    # to match majority class
+                                      random_state=42) # reproducible results
 
     # Combine majority class with upsampled minority class
     train_data_upsampled = pd.concat([data_majority, data_minority_upsampled])
@@ -153,7 +153,7 @@ def get_reviews_for_id():
         if cloth_id < max(cloth_ids) + 1:
             get_newId_on_oldId(data,cloth_id)
             cloth_id_data = data[data['Clothing ID'] == cloth_id]
-            reviews = cloth_id_data['Review Text']
+            reviews = cloth_id_data['PreProcessed Text']
             labels = cloth_id_data['Recommended IND']
             break
         print("Please enter cloth ID below 1206 !")
@@ -174,11 +174,28 @@ def get_newId_on_oldId(data,cloth_id):
     if data['ID'][idx] != data['USER ID'][idx]:
         print("for the cloth ID: {} \nOld user Id: {} and New user Id: {}".format(cloth_id,data['ID'][idx],data['USER ID'][idx]))
 
+def get_random_data(data):
+    data_copy = data.copy()
+    reviews = data_copy['Review Text']
+    labels  = data_copy['Recommended IND']
+    ratings  = data_copy['Rating']
+
+    assert (len(labels) == len(ratings)) and (len(labels) == len(reviews)), "Unmatched dimension while preprocessing data."
+    size = len(reviews)
+    while True:
+        idx = np.random.choice(size)
+        review = reviews[idx]
+        label  = labels[idx]
+        rating = ratings[idx]
+        if not (np.isnan(review) and np.isnan(label) and np.isnan(rating)) :
+            print("filling missing values")
+            data['Review Text'] = data['Review Text'].fillna(review)
+            data['Recommended IND'] = data['Recommended IND'].fillna(label)
+            data['Rating'] = data['Rating'].fillna(rating)
+            break
+
 def create_new_user_ids():
     data = pd.read_csv(eclothing_data)
-    data['Review Text'] = data['Review Text'].fillna('Missing Reviews')
-    data['Recommended IND'] = data['Recommended IND'].fillna(np.random.choice([0,1]))
-    data['Rating'] = data['Rating'].fillna(np.random.choice([1.0,2.0,3.0,4.0,5.0]))
     data.drop(['Positive Feedback Count', 'Title'], axis=1, inplace=True)
     filter_data  = data.dropna(axis = 0, how ='any')
 

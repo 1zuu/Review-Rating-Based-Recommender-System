@@ -3,10 +3,10 @@ import os
 seed = 42
 vocab_size = 15000
 max_length = 120
-embedding_dim = 300
+embedding_dim = 512
 trunc_type = 'post'
 oov_tok = "<OOV>"
-num_epochs = 10
+num_epochs = 30
 batch_size = 128
 size_lstm1 = 128
 size_lstm2 = 64

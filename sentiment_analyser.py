@@ -14,7 +14,6 @@ from sklearn.model_selection import train_test_split
 from keras.layers import Input, Embedding, LSTM, Dense, Bidirectional, Dropout
 from keras.models import Sequential
 from variables import *
-from util import preprocessed_data
 from collections import Counter
 
 np.random.seed(seed)
@@ -22,7 +21,7 @@ tf.compat.v1.set_random_seed(seed)
 
 class myCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
-        if (logs.get('accuracy') > 0.995):
+        if (logs.get('accuracy') > 0.9975):
             print("\nReached 99.5% train accuracy.So stop training!")
             self.model.stop_training = True
 
@@ -89,8 +88,7 @@ class SentimentAnalyser:
         self.model.save_weights(sentiment_weights)
 
     def predict(self,reviews,labels):
-        updated_reviews = preprocessed_data(reviews)
-        sequence_data = self.tokenizer.texts_to_sequences(updated_reviews)
+        sequence_data = self.tokenizer.texts_to_sequences(reviews)
         padded_data = pad_sequences(sequence_data, maxlen=max_length)
         if len(padded_data) == 1:
             loss, accuracy = self.model.evaluate(padded_data,np.array([labels]))
