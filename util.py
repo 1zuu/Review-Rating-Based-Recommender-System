@@ -174,29 +174,26 @@ def get_newId_on_oldId(data,cloth_id):
     if data['ID'][idx] != data['USER ID'][idx]:
         print("for the cloth ID: {} \nOld user Id: {} and New user Id: {}".format(cloth_id,data['ID'][idx],data['USER ID'][idx]))
 
-def get_random_data(data):
+def fill_nan_data(data):
     data_copy = data.copy()
-    reviews = data_copy['Review Text']
-    labels  = data_copy['Recommended IND']
-    ratings  = data_copy['Rating']
+    size = len(data_copy)
+    idxs = data_copy.index[data_copy.isnull().any(axis=1)].tolist()
 
-    assert (len(labels) == len(ratings)) and (len(labels) == len(reviews)), "Unmatched dimension while preprocessing data."
-    size = len(reviews)
-    while True:
-        idx = np.random.choice(size)
-        review = reviews[idx]
-        label  = labels[idx]
-        rating = ratings[idx]
-        if not (np.isnan(review) and np.isnan(label) and np.isnan(rating)) :
-            print("filling missing values")
-            data['Review Text'] = data['Review Text'].fillna(review)
-            data['Recommended IND'] = data['Recommended IND'].fillna(label)
-            data['Rating'] = data['Rating'].fillna(rating)
-            break
+    if len(idxs) > 0:
+        print("filling missing values")
+        for idx in idxs:
+            while True:
+                row = np.random.choice(size)
+                data_row = data_copy.iloc[row,:]
+                if len(data_row[data_row.isnull()]) != 0:
+                   data_copy.iloc[idx,:] = data_row
+                   break
+    return data_copy
 
 def create_new_user_ids():
-    data = pd.read_csv(eclothing_data)
-    data.drop(['Positive Feedback Count', 'Title'], axis=1, inplace=True)
+    df = pd.read_csv(eclothing_data)
+    df.drop(['Positive Feedback Count', 'Title'], axis=1, inplace=True)
+    data = fill_nan_data(df)
     filter_data  = data.dropna(axis = 0, how ='any')
 
     devision_name = filter_data['Division Name'].to_numpy()
