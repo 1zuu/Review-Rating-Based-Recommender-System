@@ -15,7 +15,7 @@ from keras.layers import Input, Embedding, LSTM, Dense, Bidirectional, Dropout
 from keras.models import Sequential
 from variables import *
 from collections import Counter
-
+from util import get_reviews_for_id
 np.random.seed(seed)
 tf.compat.v1.set_random_seed(seed)
 
@@ -87,6 +87,15 @@ class SentimentAnalyser:
             json_file.write(model_json)
         self.model.save_weights(sentiment_weights)
 
+    def run(self):
+        self.tokenizing_data()
+        if os.path.exists(sentiment_path) and os.path.exists(sentiment_weights):
+            self.load_model()
+        else:
+            self.embedding_model()
+            self.train_model(bias)
+            self.save_model()
+
     def predict(self,reviews,labels):
         sequence_data = self.tokenizer.texts_to_sequences(reviews)
         padded_data = pad_sequences(sequence_data, maxlen=max_length)
@@ -96,12 +105,21 @@ class SentimentAnalyser:
             loss, accuracy = self.model.evaluate(padded_data,labels)
         P = (self.model.predict(padded_data) > 0.5)
         sentiment_score = self.sentiment_score(P)
-        print("Val_loss: ",loss)
-        print("Val_accuracy: ",accuracy)
-        print("sentiment_score: ",sentiment_score)
+        return sentiment_score
+        # print("Val_loss: ",loss)
+        # print("Val_accuracy: ",accuracy)
+        # print("sentiment_score: ",sentiment_score)
 
     def sentiment_score(self,P):
         sentiment_count = Counter([y[0] for y in P])
         positive_count = sentiment_count[1]
         negative_count = sentiment_count[0]
         return positive_count / (positive_count + negative_count)
+
+    def predict_sentiments(self, recommender_ids):
+        sentiment_scores = []
+        for recommender_id in recommender_ids:
+            reviews, labels = get_reviews_for_id(recommender_id)
+            sentiment_score = self.predict(reviews, labels)
+            sentiment_scores.append(sentiment_score)
+        return sentiment_scores

@@ -13,6 +13,7 @@ from variables import train_data_path, test_data_path, cloth_count_threshold, pr
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 from collections import Counter
+from variables import alpha
 
 def get_sentiment_data():
     global train_data_path, test_data_path
@@ -145,11 +146,10 @@ def balance_test_data(reviews,labels):
     reviews , labels = shuffle(np.concatenate((reviews1,negative_reviews)),np.concatenate((labels1,negative_labels)))
     return reviews , labels
 
-def get_reviews_for_id():
+def get_reviews_for_id(cloth_id):
     data = pd.read_csv(preprocessed_sentiment_data)
     cloth_ids = data['Clothing ID']
     while True:
-        cloth_id = int(input("Enter cloth Id :"))
         if cloth_id < max(cloth_ids) + 1:
             get_newId_on_oldId(data,cloth_id)
             cloth_id_data = data[data['Clothing ID'] == cloth_id]
@@ -262,3 +262,8 @@ def movie_user_matrix(filter_data):
                               index=pivot_norm.index,
                               columns=pivot_norm.index)
     return similarity_df, pivot_norm, pivot
+
+def get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids):
+    for r, s, ids in zip(recommender_scores, sentiment_scores, rec_cloth_ids):
+        final_score = alpha * s + (1 - alpha) * r
+        print("final score for cloth id {} : {}".format(ids, final_score))

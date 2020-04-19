@@ -1,4 +1,5 @@
 import os
+alpha = 0.8
 #Sentiment analysis data
 seed = 42
 vocab_size = 15000

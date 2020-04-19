@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-from util import get_recommendation_data, get_user_id
+from util import get_recommendation_data
 from variables import max_neighbor, preprocessed_recommender_data
 
 class RecommenderSystem:
@@ -50,12 +50,7 @@ class RecommenderSystem:
 
         #Get to n recommendations
         ids = temp['ids'][:max_neighbor]
-        return self.data.loc[ids]
-
-
-if __name__ == "__main__":
-    recommendations = RecommenderSystem()
-    user_id = get_user_id()
-    n_recommendations = recommendations.get_recommendation(user_id)
-    print(n_recommendations)
+        predicted_scores = temp['predicted'][:max_neighbor].values
+        rec_cloth_ids = self.data.loc[ids]['New Clothing ID'].values
+        return predicted_scores, rec_cloth_ids
 
