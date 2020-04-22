@@ -32,8 +32,11 @@ class RecommenderSystem:
         filtering = self.pivot_norm[user_id].loc[cloth_arr] != 0
 
         # calculate the predicted score
-        score = np.dot(sim_arr[filtering][:max_neighbor], self.pivot[user_id].loc[cloth_arr[filtering][:max_neighbor]]) \
-                / np.sum(sim_arr[filtering][:max_neighbor])
+        try:
+            score = np.dot(sim_arr[filtering][:max_neighbor], self.pivot[user_id].loc[cloth_arr[filtering][:max_neighbor]]) \
+                    / np.sum(sim_arr[filtering][:max_neighbor])
+        except:
+            pass
 
         return score
 

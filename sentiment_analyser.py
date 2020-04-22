@@ -99,22 +99,15 @@ class SentimentAnalyser:
     def predict(self,reviews,labels):
         sequence_data = self.tokenizer.texts_to_sequences(reviews)
         padded_data = pad_sequences(sequence_data, maxlen=max_length)
-        if len(padded_data) == 1:
-            loss, accuracy = self.model.evaluate(padded_data,np.array([labels]))
-        else:
-            loss, accuracy = self.model.evaluate(padded_data,labels)
         P = (self.model.predict(padded_data) > 0.5)
         sentiment_score = self.sentiment_score(P)
         return sentiment_score
-        # print("Val_loss: ",loss)
-        # print("Val_accuracy: ",accuracy)
-        # print("sentiment_score: ",sentiment_score)
 
     def sentiment_score(self,P):
         sentiment_count = Counter([y[0] for y in P])
         positive_count = sentiment_count[1]
         negative_count = sentiment_count[0]
-        return positive_count / (positive_count + negative_count)
+        return (positive_count / (positive_count + negative_count))*5.0
 
     def predict_sentiments(self, recommender_ids):
         sentiment_scores = []

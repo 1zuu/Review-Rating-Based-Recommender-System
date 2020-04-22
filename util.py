@@ -14,6 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 from collections import Counter
 from variables import alpha
+import math
 
 def get_sentiment_data():
     global train_data_path, test_data_path
@@ -151,7 +152,7 @@ def get_reviews_for_id(cloth_id):
     cloth_ids = data['Clothing ID']
     while True:
         if cloth_id < max(cloth_ids) + 1:
-            get_newId_on_oldId(data,cloth_id)
+            # get_newId_on_oldId(data,cloth_id)
             cloth_id_data = data[data['Clothing ID'] == cloth_id]
             reviews = cloth_id_data['PreProcessed Text']
             labels = cloth_id_data['Recommended IND']
@@ -265,5 +266,8 @@ def movie_user_matrix(filter_data):
 
 def get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids):
     for r, s, ids in zip(recommender_scores, sentiment_scores, rec_cloth_ids):
-        final_score = alpha * s + (1 - alpha) * r
-        print("final score for cloth id {} : {}".format(ids, final_score))
+        if math.isnan(r):
+            final_score = s
+        else:
+            final_score = alpha * s + (1 - alpha) * r
+        print("cloth id : {} , prediction score : {}".format(ids, final_score))
