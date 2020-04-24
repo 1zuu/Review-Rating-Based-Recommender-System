@@ -9,7 +9,7 @@ from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from sklearn.utils import resample
 from sklearn.utils import shuffle
-from variables import train_data_path, test_data_path, cloth_count_threshold, preprocessed_eclothing_data, preprocessed_sentiment_data, preprocessed_recommender_data, eclothing_data
+from variables import train_data_path, test_data_path, cloth_count_threshold, preprocessed_sentiment_data, preprocessed_recommender_data, eclothing_data
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 from collections import Counter
@@ -18,12 +18,10 @@ import math
 
 def get_sentiment_data():
     global train_data_path, test_data_path
-    if not os.path.exists(preprocessed_eclothing_data):
-        create_new_user_ids()
     if not os.path.exists(train_data_path) or not os.path.exists(test_data_path) or not os.path.exists(preprocessed_sentiment_data):
         print("Upsampling data !!!")
-        df = pd.read_csv(preprocessed_eclothing_data)
-        data = df.copy()[['ID','USER ID','Clothing ID','Review Text','Recommended IND']]
+        df = pd.read_csv(preprocessed_recommender_data)
+        data = df.copy()[['ID','USER ID','Clothing ID','New Clothing ID','Review Text','Recommended IND']]
         data['PreProcessed Text'] = data.apply(preprocessed_text_column, axis=1)
         data.to_csv(preprocessed_sentiment_data, encoding='utf-8', index=False)
         upsample_data(data)
@@ -149,15 +147,14 @@ def balance_test_data(reviews,labels):
 
 def get_reviews_for_id(cloth_id):
     data = pd.read_csv(preprocessed_sentiment_data)
-    cloth_ids = data['Clothing ID']
+    cloth_ids = data['New Clothing ID']
     while True:
         if cloth_id < max(cloth_ids) + 1:
             # get_newId_on_oldId(data,cloth_id)
-            cloth_id_data = data[data['Clothing ID'] == cloth_id]
+            cloth_id_data = data[data['New Clothing ID'] == cloth_id]
             reviews = cloth_id_data['PreProcessed Text']
             labels = cloth_id_data['Recommended IND']
             break
-        print("Please enter cloth ID below 1206 !")
 
     return reviews.to_numpy(), labels.to_numpy()
 
@@ -172,8 +169,7 @@ def get_user_id():
 
 def get_newId_on_oldId(data,cloth_id):
     idx = data['Clothing ID'].values.tolist().index(cloth_id)
-    if data['ID'][idx] != data['USER ID'][idx]:
-        print("for the cloth ID: {} \nOld user Id: {} and New user Id: {}".format(cloth_id,data['ID'][idx],data['USER ID'][idx]))
+    return data['New Clothing ID'][idx]
 
 def fill_nan_data(data):
     data_copy = data.copy()
@@ -191,16 +187,11 @@ def fill_nan_data(data):
                    break
     return data_copy
 
-def create_new_user_ids():
-    df = pd.read_csv(eclothing_data)
-    df.drop(['Positive Feedback Count', 'Title'], axis=1, inplace=True)
-    data = fill_nan_data(df)
-    filter_data  = data.dropna(axis = 0, how ='any')
-
-    devision_name = filter_data['Division Name'].to_numpy()
-    department_name = filter_data['Department Name'].to_numpy()
-    class_name = filter_data['Class Name'].to_numpy()
-    age = filter_data['Age'].to_numpy()
+def create_new_user_ids(filter_data):
+    devision_name = filter_data['Division Name'].values
+    department_name = filter_data['Department Name'].values
+    class_name = filter_data['Class Name'].values
+    age = filter_data['Age'].values
 
     new_ids = {}
     id_idx = 0
@@ -220,16 +211,19 @@ def create_new_user_ids():
         return int(new_ids[user_tuple])
 
     filter_data['USER ID'] = filter_data.apply(user_id_row, axis=1)
-    filter_data.to_csv(preprocessed_eclothing_data, encoding='utf-8', index=False)
+    filter_data.to_csv(preprocessed_recommender_data, encoding='utf-8', index=False)
+    return filter_data
 
 def get_recommendation_data():
     if not os.path.exists(preprocessed_recommender_data):
-        df = pd.read_csv(preprocessed_eclothing_data)
-        data = df.copy()
-        data.drop(['Review Text', 'Recommended IND'], axis=1, inplace=True)
+        df = pd.read_csv(eclothing_data)
+        df.drop(['Positive Feedback Count', 'Title'], axis=1, inplace=True)
+        data = fill_nan_data(df)
+        data  = data.dropna(axis = 0, how ='any')
+        data = data.copy()
         filter_data = cloth_rating_distrubution(data,False)
-    filter_data = pd.read_csv(preprocessed_recommender_data)
-    return movie_user_matrix(filter_data)
+        filter_data = create_new_user_ids(filter_data)
+    return movie_user_matrix(pd.read_csv(preprocessed_recommender_data))
 
 def cloth_rating_distrubution(data,show_fig=True):
     cloth_ids = data['Clothing ID']
@@ -242,7 +236,6 @@ def cloth_rating_distrubution(data,show_fig=True):
     filter_cloths  = np.array([k for k,v in cloth_rating_counts.items() if int(v) >= cloth_count_threshold])
     filter_data = data.copy().loc[data['Clothing ID'].isin(filter_cloths)]
     rename_cloth_ids(filter_data)
-    filter_data.to_csv(preprocessed_recommender_data, encoding='utf-8', index=True)
     return filter_data
 
 def rename_cloth_ids(filter_data):

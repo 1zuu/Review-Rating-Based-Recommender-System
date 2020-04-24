@@ -12,7 +12,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import model_from_json
 from sklearn.model_selection import train_test_split
 from keras.layers import Input, Embedding, LSTM, Dense, Bidirectional, Dropout
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from variables import *
 from collections import Counter
 from util import get_reviews_for_id
@@ -44,16 +44,23 @@ class SentimentAnalyser:
         self.tokenizer = tokenizer
 
     def embedding_model(self):
+        # model = Sequential()
+        # model.add(Embedding(output_dim=embedding_dim, input_dim=vocab_size, input_length=max_length))
+        # model.add(Bidirectional(LSTM(size_lstm)))
+        # model.add(Dense(size_dense, activation='relu'))
+        # model.add(Dense(size_dense, activation='relu'))
+        # model.add(Dense(size_dense, activation='relu'))
+        # model.add(Dense(size_output, activation='sigmoid'))
 
-        model = Sequential()
-        model.add(Embedding(output_dim=embedding_dim, input_dim=vocab_size, input_length=max_length))
-        model.add(Bidirectional(LSTM(size_lstm1,return_sequences=True)))
-        model.add(Bidirectional(LSTM(size_lstm2)))
-        model.add(Dense(size_dense, activation='relu'))
-        model.add(Dense(size_dense, activation='relu'))
-        model.add(Dense(size_dense, activation='relu'))
-        model.add(Dense(size_output, activation='sigmoid'))
+        inputs = Input(shape=(max_length,))
+        x = Embedding(output_dim=embedding_dim, input_dim=vocab_size, input_length=max_length)(inputs)
+        x = Bidirectional(LSTM(size_lstm))(x)
+        x = Dense(size_dense, activation='relu')(x)
+        x = Dense(size_dense, activation='relu')(x)
+        x = Dense(size_dense, activation='relu')(x)
+        outputs = Dense(size_output, activation='sigmoid')(x)
 
+        model = Model(inputs=inputs, outputs=outputs)
         self.model = model
 
     def load_model(self):
