@@ -14,17 +14,19 @@ sentiment_weights = os.path.join(current_dir,sentiment_weights)
 '''
 python -W ignore bellarena.py
 
+1187 users
+147 cloths
+
 '''
 
 if __name__ == "__main__":
-    get_recommendation_data()
-    train_labels,test_labels,train_reviews,test_reviews = get_sentiment_data()
     # recommender system
     recommendations = RecommenderSystem()
     user_id = get_user_id()
     recommender_scores, rec_cloth_ids = recommendations.get_recommendation(user_id)
+
     # sentiment analysis
-    analyser = SentimentAnalyser(train_reviews,train_labels,test_reviews,test_labels)
+    analyser = SentimentAnalyser()
     analyser.run()
     sentiment_scores = analyser.predict_sentiments(rec_cloth_ids)
     # Final score

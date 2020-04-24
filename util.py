@@ -223,7 +223,12 @@ def get_recommendation_data():
         data = data.copy()
         filter_data = cloth_rating_distrubution(data,False)
         filter_data = create_new_user_ids(filter_data)
-    return movie_user_matrix(pd.read_csv(preprocessed_recommender_data))
+    filter_data = pd.read_csv(preprocessed_recommender_data)
+    filter_data = shuffle(filter_data)
+    user_ids = filter_data['USER ID'].to_numpy()
+    cloth_ids = filter_data['New Clothing ID'].to_numpy()
+    ratings = filter_data['Rating'].to_numpy(dtype=np.float64)
+    return user_ids, cloth_ids,ratings
 
 def cloth_rating_distrubution(data,show_fig=True):
     cloth_ids = data['Clothing ID']
@@ -246,16 +251,6 @@ def rename_cloth_ids(filter_data):
         x = row['Clothing ID']
         return id_map[x]
     filter_data['New Clothing ID'] = filter_data.apply(update_cloth_ids, axis=1)
-
-def movie_user_matrix(filter_data):
-    pivot = pd.pivot_table(filter_data, index='New Clothing ID', columns='USER ID', values='Rating')
-    pivot.dropna(axis=1, how='all', inplace=True)
-    pivot_norm = pivot.apply(lambda x: x - np.nanmean(x), axis=1)
-    pivot_norm.fillna(0, inplace=True)
-    similarity_df = pd.DataFrame(cosine_similarity(pivot_norm, pivot_norm),
-                              index=pivot_norm.index,
-                              columns=pivot_norm.index)
-    return similarity_df, pivot_norm, pivot
 
 def get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids):
     for r, s, ids in zip(recommender_scores, sentiment_scores, rec_cloth_ids):
