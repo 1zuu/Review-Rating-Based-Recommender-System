@@ -29,4 +29,4 @@ if __name__ == "__main__":
     sentiment_scores = analyser.predict_sentiments(rec_cloth_ids)
 
     # Final score
-    get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids)
+    data_tuple = get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids)
