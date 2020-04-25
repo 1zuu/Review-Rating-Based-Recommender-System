@@ -9,7 +9,7 @@ from sklearn.utils import shuffle
 from tensorflow import keras
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import model_from_json
+from tensorflow.keras.models import model_from_json, load_model
 from sklearn.model_selection import train_test_split
 from keras.layers import Input, Embedding, LSTM, Dense, Bidirectional, Dropout
 from keras.models import Sequential, Model
@@ -65,12 +65,18 @@ class SentimentAnalyser:
         self.model = model
 
     def load_model(self):
-        json_file = open(sentiment_path, 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
-        loaded_model = model_from_json(loaded_model_json)
-        loaded_model.load_weights(sentiment_weights)
-        loaded_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        # json_file = open(sentiment_path, 'r')
+        # loaded_model_json = json_file.read()
+        # json_file.close()
+        # loaded_model = model_from_json(loaded_model_json)
+        # loaded_model.load_weights(sentiment_weights)
+
+        loaded_model = load_model(sentiment_weights)
+        loaded_model.compile(
+                        loss='binary_crossentropy',
+                        optimizer='adam',
+                        metrics=['accuracy']
+                        )
         self.model = loaded_model
 
     def train_model(self,bias):
@@ -90,14 +96,16 @@ class SentimentAnalyser:
             )
 
     def save_model(self):
-        model_json = self.model.to_json()
-        with open(sentiment_path, "w") as json_file:
-            json_file.write(model_json)
-        self.model.save_weights(sentiment_weights)
+        # model_json = self.model.to_json()
+        # with open(sentiment_path, "w") as json_file:
+        #     json_file.write(model_json)
+        # self.model.save_weights(sentiment_weights)
+
+        self.model.save(sentiment_weights)
 
     def run(self):
         self.tokenizing_data()
-        if os.path.exists(sentiment_path) and os.path.exists(sentiment_weights):
+        if os.path.exists(sentiment_weights):
             self.load_model()
         else:
             self.embedding_model()

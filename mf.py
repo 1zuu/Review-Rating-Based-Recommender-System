@@ -7,7 +7,7 @@ from util import get_recommendation_data
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from tensorflow import keras
 from keras.layers import Input, Embedding, Dense, Flatten, Concatenate
-from keras.models import Model, model_from_json
+from keras.models import Model, model_from_json, load_model
 from keras.optimizers import SGD
 
 import logging
@@ -82,26 +82,30 @@ class RecommenderSystem(object):
             )
 
     def save_model(self):
-        model_json = self.model.to_json()
-        with open(recommender_path, "w") as json_file:
-            json_file.write(model_json)
-        self.model.save_weights(recommender_weights)
+        # model_json = self.model.to_json()
+        # with open(recommender_path, "w") as json_file:
+        #     json_file.write(model_json)
+        # self.model.save_weights(recommender_weights)
+
+        self.model.save(recommender_weights)
 
     def load_model(self):
-        json_file = open(recommender_path, 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
-        loaded_model = model_from_json(loaded_model_json)
-        loaded_model.load_weights(recommender_weights)
+        # json_file = open(recommender_path, 'r')
+        # loaded_model_json = json_file.read()
+        # json_file.close()
+        # loaded_model = model_from_json(loaded_model_json)
+        # loaded_model.load_weights(recommender_weights)
+
+        loaded_model = load_model(recommender_weights)
+
         loaded_model.compile(
                 loss='mse',
                 optimizer='adam')
                 # optimizer=SGD(lr=lr, momentum=mom))
         self.model = loaded_model
-
     def run(self):
         self.split_data()
-        if os.path.exists(recommender_path) and os.path.exists(recommender_weights):
+        if os.path.exists(recommender_weights):
             self.load_model()
         else:
             self.regressor()

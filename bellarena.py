@@ -5,11 +5,6 @@ import logging
 logging.getLogger('tensorflow').disabled = True
 from mf import RecommenderSystem
 from util import get_sentiment_data, get_reviews_for_id, get_user_id, get_final_score, get_recommendation_data
-from variables import bias,sentiment_path,sentiment_weights, seed
-
-current_dir = os.getcwd()
-sentiment_path = os.path.join(current_dir,sentiment_path)
-sentiment_weights = os.path.join(current_dir,sentiment_weights)
 
 '''
 python -W ignore bellarena.py
@@ -20,10 +15,12 @@ python -W ignore bellarena.py
 '''
 
 if __name__ == "__main__":
+
+    user_id = get_user_id()
+
     # recommender system
     recommendations = RecommenderSystem()
     recommendations.run()
-    user_id = get_user_id()
     rec_cloth_ids, recommender_scores  = recommendations.predict(user_id)
 
     # sentiment analysis

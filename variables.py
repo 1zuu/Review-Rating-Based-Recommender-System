@@ -26,13 +26,13 @@ R_hidden = 64
 R_out = 1
 batch_sizeR = 128
 num_epochsR = 100
-recommender_path = "data/recommender_model.json"
+# recommender_path = "data/recommender_model.json"
 recommender_weights = "data/recommender_model.h5"
 
 #Data paths and weights
 train_data_path = 'data/train.csv'
 test_data_path = 'data/test.csv'
-sentiment_path = "data/sentiment_model.json"
+# sentiment_path = "data/sentiment_model.json"
 sentiment_weights = "data/sentiment_model.h5"
 eclothing_data = 'data/Womens Clothing E-Commerce Reviews.csv'
 preprocessed_sentiment_data = "data/Preprocessed Sentiment Data.csv"
