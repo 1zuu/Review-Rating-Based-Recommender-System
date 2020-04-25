@@ -7,14 +7,15 @@ max_length = 120
 embedding_dimS = 512
 trunc_type = 'post'
 oov_tok = "<OOV>"
-num_epochs = 5
+num_epochs = 30
 batch_size = 128
-size_lstm  = 128
+size_lstm  = 256
 denseS = 64
 size_output = 1
 bias = 0.21600911256083669
 
 #Recommender System data
+max_recommendes = 10
 cutoff = 0.8
 lr = 0.08
 mom = 0.9

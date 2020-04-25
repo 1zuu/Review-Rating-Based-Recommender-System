@@ -253,9 +253,16 @@ def rename_cloth_ids(filter_data):
     filter_data['New Clothing ID'] = filter_data.apply(update_cloth_ids, axis=1)
 
 def get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids):
+    data_tuple = []
     for r, s, ids in zip(recommender_scores, sentiment_scores, rec_cloth_ids):
         if math.isnan(r):
-            final_score = s
+            final_score = round(s, 3)
         else:
-            final_score = alpha * s + (1 - alpha) * r
+            final_score = round(alpha * s + (1 - alpha) * r, 3)
+        data_tuple.append((ids, final_score))
+    data_tuple = sorted(data_tuple,key=lambda x: x[1],reverse=True)
+    visualize_scores(data_tuple)
+
+def visualize_scores(data_tuple):
+    for ids, final_score in data_tuple:
         print("cloth id : {} , prediction score : {}".format(ids, final_score))

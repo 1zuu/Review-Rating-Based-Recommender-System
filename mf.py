@@ -109,11 +109,15 @@ class RecommenderSystem(object):
             self.save_model()
 
     def predict(self, user_id):
-
-            # self.model.predict([user_id,[i]])
-
-
-if __name__ == "__main__":
-    model = RecommenderSystem()
-    model.run()
-    model.predict([100],)
+        data = pd.read_csv(preprocessed_recommender_data)
+        cloth_ids = data['New Clothing ID'].values
+        cloth_ids = set(cloth_ids)
+        rating_ids = []
+        for cloth_id in cloth_ids:
+            rating = float(self.model.predict([[user_id],[cloth_id]]).squeeze())
+            rating = (rating * self.std_rating) + self.avg_rating
+            rating_ids.append((cloth_id, rating))
+        rec_cloths = sorted(rating_ids,key=lambda x: x[1],reverse=True)[:max_recommendes]
+        rec_cloth_ids = [v[0] for v in rec_cloths if v[1] > 0]
+        rec_cloth_rating = [min(v[1], 5.0) for v in rec_cloths if v[1] > 0]
+        return rec_cloth_ids, rec_cloth_rating
