@@ -262,7 +262,11 @@ def get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids):
             final_score = round(alpha * s + (1 - alpha) * r, 3)
         data_tuple.append((ids, final_score))
     data_tuple = sorted(data_tuple,key=lambda x: x[1],reverse=True)
-    visualize_scores(data_tuple)
+    recommended_ids = [int(v[0]) for v in data_tuple]
+    recommended_score = [float(v[1]) for v in data_tuple]
+    # visualize_scores(data_tuple)
+    return recommended_ids, recommended_score
+
 
 def visualize_scores(data_tuple):
     for ids, final_score in data_tuple:
