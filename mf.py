@@ -115,12 +115,14 @@ class RecommenderSystem(object):
     def predict(self, user_id):
         data = pd.read_csv(preprocessed_recommender_data)
         cloth_ids = data['New Clothing ID'].values
+        alread_rated_cloths = data[data['USER ID'] == user_id]['New Clothing ID'].values
         cloth_ids = set(cloth_ids)
         rating_ids = []
         for cloth_id in cloth_ids:
-            rating = float(self.model.predict([[user_id],[cloth_id]]).squeeze())
-            rating = (rating * self.std_rating) + self.avg_rating
-            rating_ids.append((cloth_id, rating))
+            if cloth_id not in alread_rated_cloths:
+                rating = float(self.model.predict([[user_id],[cloth_id]]).squeeze())
+                rating = (rating * self.std_rating) + self.avg_rating
+                rating_ids.append((cloth_id, rating))
         rec_cloths = sorted(rating_ids,key=lambda x: x[1],reverse=True)[:max_recommendes]
         rec_cloth_ids = [v[0] for v in rec_cloths if v[1] > 0]
         rec_cloth_rating = [min(v[1], 5.0) for v in rec_cloths if v[1] > 0]

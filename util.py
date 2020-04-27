@@ -159,6 +159,7 @@ def get_reviews_for_id(cloth_id):
     return reviews.to_numpy(), labels.to_numpy()
 
 def get_user_id():
+    get_recommendation_data()
     data = pd.read_csv(preprocessed_recommender_data)
     user_ids = set(data['USER ID'])
     while True:
