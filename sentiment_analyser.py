@@ -27,9 +27,10 @@ class myCallback(keras.callbacks.Callback):
             self.model.stop_training = True
 
 class SentimentAnalyser:
-    def __init__(self):
+    def __init__(self,data):
+        self.data = data
         if not os.path.exists(sentiment_weights):
-            Ytrain,Ytest,Xtrain,Xtest = get_sentiment_data()
+            Ytrain,Ytest,Xtrain,Xtest = get_sentiment_data(data)
             self.Xtrain = Xtrain
             self.Ytrain = Ytrain
             self.Xtest  = Xtest
@@ -49,14 +50,6 @@ class SentimentAnalyser:
             pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def embedding_model(self):
-        # model = Sequential()
-        # model.add(Embedding(output_dim=embedding_dimS, input_dim=vocab_size, input_length=max_length))
-        # model.add(Bidirectional(LSTM(size_lstm)))
-        # model.add(Dense(denseS, activation='relu'))
-        # model.add(Dense(denseS, activation='relu'))
-        # model.add(Dense(denseS, activation='relu'))
-        # model.add(Dense(size_output, activation='sigmoid'))
-
         inputs = Input(shape=(max_length,))
         x = Embedding(output_dim=embedding_dimS, input_dim=vocab_size, input_length=max_length)(inputs)
         x = Bidirectional(LSTM(size_lstm))(x)
@@ -69,12 +62,6 @@ class SentimentAnalyser:
         self.model = model
 
     def load_model(self):
-        # json_file = open(sentiment_path, 'r')
-        # loaded_model_json = json_file.read()
-        # json_file.close()
-        # loaded_model = model_from_json(loaded_model_json)
-        # loaded_model.load_weights(sentiment_weights)
-
         with open(tokenizer_obj_path, 'rb') as handle:
             self.tokenizer = pickle.load(handle)
 
@@ -103,18 +90,13 @@ class SentimentAnalyser:
             )
 
     def save_model(self):
-        # model_json = self.model.to_json()
-        # with open(sentiment_path, "w") as json_file:
-        #     json_file.write(model_json)
-        # self.model.save_weights(sentiment_weights)
-
         self.model.save(sentiment_weights)
 
     def run(self):
-        self.tokenizing_data()
         if os.path.exists(sentiment_weights):
             self.load_model()
         else:
+            self.tokenizing_data()
             self.embedding_model()
             self.train_model(bias)
             self.save_model()
@@ -122,7 +104,7 @@ class SentimentAnalyser:
     def predict(self,reviews,labels):
         sequence_data = self.tokenizer.texts_to_sequences(reviews)
         padded_data = pad_sequences(sequence_data, maxlen=max_length)
-        P = (self.model.predict(padded_data) > 0.5)
+        P = (self.model.predict(padded_data) > 0.7)
         sentiment_score = self.sentiment_score(P)
         return sentiment_score
 
@@ -135,7 +117,7 @@ class SentimentAnalyser:
     def predict_sentiments(self, recommender_ids):
         sentiment_scores = []
         for recommender_id in recommender_ids:
-            reviews, labels = get_reviews_for_id(recommender_id)
+            reviews, labels = get_reviews_for_id(self.data, recommender_id)
             sentiment_score = self.predict(reviews, labels)
             sentiment_scores.append(sentiment_score)
         return sentiment_scores

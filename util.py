@@ -18,9 +18,8 @@ import math
 from sqlalchemy import create_engine
 import sqlalchemy
 
-def get_sentiment_data():
+def get_sentiment_data(data):
     print("Upsampling data !!!")
-    data = pd.read_sql_table(table_name, db_url)
     train_data, test_data = upsample_data(data)
     train_labels  = train_data['Recommended IND'].values
     test_labels   = test_data['Recommended IND'].values
@@ -137,8 +136,7 @@ def balance_test_data(reviews,labels):
     reviews , labels = shuffle(np.concatenate((reviews1,negative_reviews)),np.concatenate((labels1,negative_labels)))
     return reviews , labels
 
-def get_reviews_for_id(cloth_id):
-    data = pd.read_sql_table(table_name, db_url)
+def get_reviews_for_id(data, cloth_id):
     cloth_ids = data['Cloth ID']
     while True:
         if cloth_id < max(cloth_ids) + 1:
@@ -149,8 +147,7 @@ def get_reviews_for_id(cloth_id):
 
     return reviews, labels
 
-def get_user_id():
-    data = pd.read_sql_table(table_name, db_url)
+def get_user_id(data):
     user_ids = set(data['USER ID'])
     while True:
         user_id = int(input("Enter user Id :"))
@@ -200,8 +197,7 @@ def create_new_user_ids(filter_data):
     filter_data['USER ID'] = filter_data.apply(user_id_row, axis=1)
     return filter_data
 
-def get_recommendation_data():
-    data = pd.read_sql_table(table_name, db_url)
+def get_recommendation_data(data):
     user_ids = data['USER ID'].to_numpy()
     cloth_ids = data['Cloth ID'].to_numpy()
     ratings = data['Rating'].to_numpy(dtype=np.float64)

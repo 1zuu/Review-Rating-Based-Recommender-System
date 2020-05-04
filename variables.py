@@ -1,5 +1,5 @@
 import os
-alpha = 0.5
+alpha = 0.7
 table_name = 'bellarena_ai'
 db_url = 'mysql://root:1234@localhost/Bellarena'
 #Sentiment analysis data
@@ -28,15 +28,12 @@ R_hidden = 64
 R_out = 1
 batch_sizeR = 128
 num_epochsR = 20
-# recommender_path = "data/recommender_model.json"
+rating_params_path = "data/rating_params.pickle"
 recommender_weights = "data/recommender_model.h5"
 Rlayer_api_dir = "data/recommender model api"
 
 #Data paths and weights
 tokenizer_obj_path = 'data/tokenizer.pickle'
-# sentiment_path = "data/sentiment_model.json"
 sentiment_weights = "data/sentiment_model.h5"
 Slayer_api_dir = "data/sentiment model api"
 eclothing_data = 'data/Womens Clothing E-Commerce Reviews.csv'
-preprocessed_sentiment_data = "data/Preprocessed Sentiment Data.csv"
-preprocessed_recommender_data = "data/Preprocessed Recommdender Data.csv"

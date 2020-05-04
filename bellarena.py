@@ -1,10 +1,12 @@
 import os
+import pandas as pd
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from sentiment_analyser import SentimentAnalyser
 import logging
 logging.getLogger('tensorflow').disabled = True
 from mf import RecommenderSystem
 from util import get_sentiment_data, get_reviews_for_id, get_user_id, get_final_score, get_recommendation_data, create_dataset
+from variables import table_name, db_url
 
 '''
 python -W ignore bellarena.py
@@ -16,15 +18,15 @@ python -W ignore bellarena.py
 
 if __name__ == "__main__":
     create_dataset()
-
-    recommendations = RecommenderSystem()
+    data = pd.read_sql_table(table_name, db_url)
+    recommendations = RecommenderSystem(data)
     recommendations.run()
-    analyser = SentimentAnalyser()
+    analyser = SentimentAnalyser(data)
     analyser.run()
 
-    user_id = get_user_id()
+    user_id = get_user_id(data)
     rec_cloth_ids, recommender_scores  = recommendations.predict(user_id)
     sentiment_scores = analyser.predict_sentiments(rec_cloth_ids)
 
     # Final score
-    data_tuple = get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids)
+    recommended_ids, recommended_score = get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids)

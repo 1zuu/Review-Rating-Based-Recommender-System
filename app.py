@@ -16,9 +16,10 @@ from flask import request
 app = Flask(__name__)
 
 create_dataset()
-recommenders = RecommenderSystem()
+data = pd.read_sql_table(table_name, db_url)
+recommenders = RecommenderSystem(data)
 recommenders.run()
-sentiments = SentimentAnalyser()
+sentiments = SentimentAnalyser(data)
 sentiments.run()
 
 
@@ -35,3 +36,5 @@ def predict():
     }
     return jsonify(response)
 
+if __name__ == "__main__":
+    app.run(debug=True)

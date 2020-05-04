@@ -1,4 +1,5 @@
 import os
+import pickle
 import numpy as np
 import pandas as pd
 from variables import*
@@ -14,14 +15,16 @@ import logging
 logging.getLogger('tensorflow').disabled = True
 
 class RecommenderSystem(object):
-    def __init__(self):
-        user_ids, cloth_ids,ratings = get_recommendation_data()
-        self.user_ids = user_ids
-        self.cloth_ids = cloth_ids
-        self.ratings = ratings
+    def __init__(self, data):
+        self.data = data
+        if not os.path.exists(recommender_weights):
+            user_ids, cloth_ids,ratings = get_recommendation_data(data)
+            self.user_ids = user_ids
+            self.cloth_ids = cloth_ids
+            self.ratings = ratings
 
-        self.n_users = len(set(self.user_ids))
-        self.n_cloths = len(set(self.cloth_ids))
+            self.n_users = len(set(self.user_ids))
+            self.n_cloths = len(set(self.cloth_ids))
 
     def split_data(self):
         Ntrain = int(cutoff * len(self.ratings))
@@ -37,6 +40,13 @@ class RecommenderSystem(object):
         self.std_rating = self.train_ratings.std()
         self.train_ratings = (self.train_ratings - self.avg_rating)/self.std_rating
         self.test_ratings  = (self.test_ratings - self.avg_rating)/self.std_rating
+
+        rating_params = {
+                "avg_rating": self.avg_rating,
+                "std_rating": self.std_rating
+                }
+        with open(rating_params_path, 'wb') as handle:
+            pickle.dump(rating_params, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def regressor(self):
 
@@ -82,19 +92,14 @@ class RecommenderSystem(object):
             )
 
     def save_model(self):
-        # model_json = self.model.to_json()
-        # with open(recommender_path, "w") as json_file:
-        #     json_file.write(model_json)
-        # self.model.save_weights(recommender_weights)
-
         self.model.save(recommender_weights)
 
     def load_model(self):
-        # json_file = open(recommender_path, 'r')
-        # loaded_model_json = json_file.read()
-        # json_file.close()
-        # loaded_model = model_from_json(loaded_model_json)
-        # loaded_model.load_weights(recommender_weights)
+        with open(rating_params_path, 'rb') as handle:
+            rating_params = pickle.load(handle)
+
+        self.avg_rating = rating_params['avg_rating']
+        self.std_rating = rating_params['std_rating']
 
         loaded_model = load_model(recommender_weights)
 
@@ -104,16 +109,16 @@ class RecommenderSystem(object):
                 # optimizer=SGD(lr=lr, momentum=mom))
         self.model = loaded_model
     def run(self):
-        self.split_data()
         if os.path.exists(recommender_weights):
             self.load_model()
         else:
+            self.split_data()
             self.regressor()
             self.train_model()
             self.save_model()
 
     def predict(self, user_id):
-        data = pd.read_sql_table(table_name, db_url)
+        data = self.data
         cloth_ids = data['Cloth ID'].values
         alread_rated_cloths = data[data['USER ID'] == user_id]['Cloth ID'].values
         cloth_ids = set(cloth_ids)
