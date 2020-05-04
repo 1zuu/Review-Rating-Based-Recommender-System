@@ -54,6 +54,6 @@ class RecommenderSystem:
         #Get to n recommendations
         ids = temp['ids'][:max_neighbor]
         predicted_scores = temp['predicted'][:max_neighbor].values
-        rec_cloth_ids = self.data.loc[ids]['New Clothing ID'].values
+        rec_cloth_ids = self.data.loc[ids]['Cloth ID'].values
         return predicted_scores, rec_cloth_ids
 

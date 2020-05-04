@@ -2,6 +2,7 @@ import re
 import csv
 import random
 import os
+import pickle
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -27,11 +28,12 @@ class myCallback(keras.callbacks.Callback):
 
 class SentimentAnalyser:
     def __init__(self):
-        Ytrain,Ytest,Xtrain,Xtest = get_sentiment_data()
-        self.Xtrain = Xtrain
-        self.Ytrain = Ytrain
-        self.Xtest  = Xtest
-        self.Ytest  = Ytest
+        if not os.path.exists(sentiment_weights):
+            Ytrain,Ytest,Xtrain,Xtest = get_sentiment_data()
+            self.Xtrain = Xtrain
+            self.Ytrain = Ytrain
+            self.Xtest  = Xtest
+            self.Ytest  = Ytest
 
     def tokenizing_data(self):
         tokenizer = Tokenizer(num_words = vocab_size, oov_token=oov_tok)
@@ -43,6 +45,8 @@ class SentimentAnalyser:
         Xtest_seq  = tokenizer.texts_to_sequences(self.Xtest)
         self.Xtest_pad = pad_sequences(Xtest_seq, maxlen=max_length)
         self.tokenizer = tokenizer
+        with open(tokenizer_obj_path, 'wb') as handle:
+            pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def embedding_model(self):
         # model = Sequential()
@@ -70,6 +74,9 @@ class SentimentAnalyser:
         # json_file.close()
         # loaded_model = model_from_json(loaded_model_json)
         # loaded_model.load_weights(sentiment_weights)
+
+        with open(tokenizer_obj_path, 'rb') as handle:
+            self.tokenizer = pickle.load(handle)
 
         loaded_model = load_model(sentiment_weights)
         loaded_model.compile(

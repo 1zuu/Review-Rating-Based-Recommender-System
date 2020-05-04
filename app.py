@@ -7,7 +7,7 @@ import logging
 logging.getLogger('tensorflow').disabled = True
 from mf import RecommenderSystem
 from variables import *
-from util import get_sentiment_data, get_reviews_for_id, get_user_id, get_final_score, get_recommendation_data
+from util import get_final_score, create_dataset
 
 from flask import Flask
 from flask import jsonify
@@ -15,6 +15,7 @@ from flask import request
 
 app = Flask(__name__)
 
+create_dataset()
 recommenders = RecommenderSystem()
 recommenders.run()
 sentiments = SentimentAnalyser()

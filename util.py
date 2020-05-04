@@ -9,31 +9,24 @@ from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from sklearn.utils import resample
 from sklearn.utils import shuffle
-from variables import train_data_path, test_data_path, cloth_count_threshold, preprocessed_sentiment_data, preprocessed_recommender_data, eclothing_data
+from variables import*
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 from collections import Counter
 from variables import alpha
 import math
+from sqlalchemy import create_engine
+import sqlalchemy
 
 def get_sentiment_data():
-    global train_data_path, test_data_path
-    if not os.path.exists(train_data_path) or not os.path.exists(test_data_path) or not os.path.exists(preprocessed_sentiment_data):
-        print("Upsampling data !!!")
-        df = pd.read_csv(preprocessed_recommender_data)
-        data = df.copy()[['ID','USER ID','Clothing ID','New Clothing ID','Review Text','Recommended IND']]
-        data['PreProcessed Text'] = data.apply(preprocessed_text_column, axis=1)
-        data.to_csv(preprocessed_sentiment_data, encoding='utf-8', index=False)
-        upsample_data(data)
-    train_data = pd.read_csv(train_data_path)
-    test_data  = pd.read_csv(test_data_path)
+    print("Upsampling data !!!")
+    data = pd.read_sql_table(table_name, db_url)
+    train_data, test_data = upsample_data(data)
+    train_labels  = train_data['Recommended IND'].values
+    test_labels   = test_data['Recommended IND'].values
 
-    train_labels  = np.array(train_data['Recommended IND'],dtype=np.int32)
-    test_labels   = np.array(test_data['Recommended IND'],dtype=np.int32)
-
-    train_reviews = np.array(train_data['PreProcessed Text'],dtype='str')
-    test_reviews  = np.array(test_data['PreProcessed Text'],dtype='str')
-    print("Data is Ready!!!")
+    train_reviews = preprocessed_data(train_data['Review Text'].values)
+    test_reviews  = preprocessed_data(test_data['Review Text'].values)
     return train_labels,test_labels,train_reviews,test_reviews
 
 def lemmatization(lemmatizer,sentence):
@@ -113,8 +106,7 @@ def upsample_data(data):
 
     train_data_upsampled = train_data_upsampled.dropna(axis = 0, how ='any')
     test = test.dropna(axis = 0, how ='any')
-    train_data_upsampled.to_csv(train_data_path, encoding='utf-8', index=False)
-    test.to_csv(test_data_path, encoding='utf-8', index=False)
+    return train_data_upsampled, test
 
 def preprocessed_data(reviews):
     updated_reviews = []
@@ -146,31 +138,25 @@ def balance_test_data(reviews,labels):
     return reviews , labels
 
 def get_reviews_for_id(cloth_id):
-    data = pd.read_csv(preprocessed_sentiment_data)
-    cloth_ids = data['New Clothing ID']
+    data = pd.read_sql_table(table_name, db_url)
+    cloth_ids = data['Cloth ID']
     while True:
         if cloth_id < max(cloth_ids) + 1:
-            # get_newId_on_oldId(data,cloth_id)
-            cloth_id_data = data[data['New Clothing ID'] == cloth_id]
-            reviews = cloth_id_data['PreProcessed Text']
-            labels = cloth_id_data['Recommended IND']
+            cloth_id_data = data[data['Cloth ID'] == cloth_id]
+            reviews = preprocessed_data(cloth_id_data['Review Text'].values)
+            labels = cloth_id_data['Recommended IND'].values
             break
 
-    return reviews.to_numpy(), labels.to_numpy()
+    return reviews, labels
 
 def get_user_id():
-    get_recommendation_data()
-    data = pd.read_csv(preprocessed_recommender_data)
+    data = pd.read_sql_table(table_name, db_url)
     user_ids = set(data['USER ID'])
     while True:
         user_id = int(input("Enter user Id :"))
         if user_id in user_ids:
             return user_id
-        print("Please enter Valid User ID below !")
-
-def get_newId_on_oldId(data,cloth_id):
-    idx = data['Clothing ID'].values.tolist().index(cloth_id)
-    return data['New Clothing ID'][idx]
+        print("Please enter Valid User ID below {}!".format(len(user_ids)))
 
 def fill_nan_data(data):
     data_copy = data.copy()
@@ -212,24 +198,43 @@ def create_new_user_ids(filter_data):
         return int(new_ids[user_tuple])
 
     filter_data['USER ID'] = filter_data.apply(user_id_row, axis=1)
-    filter_data.to_csv(preprocessed_recommender_data, encoding='utf-8', index=False)
     return filter_data
 
 def get_recommendation_data():
-    if not os.path.exists(preprocessed_recommender_data):
+    data = pd.read_sql_table(table_name, db_url)
+    user_ids = data['USER ID'].to_numpy()
+    cloth_ids = data['Cloth ID'].to_numpy()
+    ratings = data['Rating'].to_numpy(dtype=np.float64)
+    return user_ids, cloth_ids,ratings
+
+def create_dataset():
+    engine = create_engine(db_url)
+    if table_name not in sqlalchemy.inspect(engine).get_table_names():
         df = pd.read_csv(eclothing_data)
         df.drop(['Positive Feedback Count', 'Title'], axis=1, inplace=True)
         data = fill_nan_data(df)
         data  = data.dropna(axis = 0, how ='any')
         data = data.copy()
+
         filter_data = cloth_rating_distrubution(data,False)
         filter_data = create_new_user_ids(filter_data)
-    filter_data = pd.read_csv(preprocessed_recommender_data)
-    filter_data = shuffle(filter_data)
-    user_ids = filter_data['USER ID'].to_numpy()
-    cloth_ids = filter_data['New Clothing ID'].to_numpy()
-    ratings = filter_data['Rating'].to_numpy(dtype=np.float64)
-    return user_ids, cloth_ids,ratings
+
+        filter_data.drop(['ID', 'Clothing ID'], axis=1, inplace=True)
+        filter_data = shuffle(filter_data)
+
+        data = filter_data.copy()
+        # data['PreProcessed Text'] = data.apply(preprocessed_text_column, axis=1)
+
+        ordered_cols = []
+        cols = list(data.columns.values)
+        ordered_cols.append(cols[-1])
+        ordered_cols.append(cols[-2])
+        ordered_cols.extend(cols[:-2])
+        data = data[ordered_cols]
+
+        print("create db table")
+        with engine.connect() as conn, conn.begin():
+            data.to_sql(table_name, conn, if_exists='append', index=False)
 
 def cloth_rating_distrubution(data,show_fig=True):
     cloth_ids = data['Clothing ID']
@@ -251,7 +256,7 @@ def rename_cloth_ids(filter_data):
     def update_cloth_ids(row, id_map=id_map):
         x = row['Clothing ID']
         return id_map[x]
-    filter_data['New Clothing ID'] = filter_data.apply(update_cloth_ids, axis=1)
+    filter_data['Cloth ID'] = filter_data.apply(update_cloth_ids, axis=1)
 
 def get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids):
     data_tuple = []

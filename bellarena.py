@@ -4,7 +4,7 @@ from sentiment_analyser import SentimentAnalyser
 import logging
 logging.getLogger('tensorflow').disabled = True
 from mf import RecommenderSystem
-from util import get_sentiment_data, get_reviews_for_id, get_user_id, get_final_score, get_recommendation_data
+from util import get_sentiment_data, get_reviews_for_id, get_user_id, get_final_score, get_recommendation_data, create_dataset
 
 '''
 python -W ignore bellarena.py
@@ -15,17 +15,15 @@ python -W ignore bellarena.py
 '''
 
 if __name__ == "__main__":
+    create_dataset()
 
-    user_id = get_user_id()
-
-    # recommender system
     recommendations = RecommenderSystem()
     recommendations.run()
-    rec_cloth_ids, recommender_scores  = recommendations.predict(user_id)
-
-    # sentiment analysis
     analyser = SentimentAnalyser()
     analyser.run()
+
+    user_id = get_user_id()
+    rec_cloth_ids, recommender_scores  = recommendations.predict(user_id)
     sentiment_scores = analyser.predict_sentiments(rec_cloth_ids)
 
     # Final score

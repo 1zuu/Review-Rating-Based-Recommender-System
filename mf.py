@@ -113,9 +113,9 @@ class RecommenderSystem(object):
             self.save_model()
 
     def predict(self, user_id):
-        data = pd.read_csv(preprocessed_recommender_data)
-        cloth_ids = data['New Clothing ID'].values
-        alread_rated_cloths = data[data['USER ID'] == user_id]['New Clothing ID'].values
+        data = pd.read_sql_table(table_name, db_url)
+        cloth_ids = data['Cloth ID'].values
+        alread_rated_cloths = data[data['USER ID'] == user_id]['Cloth ID'].values
         cloth_ids = set(cloth_ids)
         rating_ids = []
         for cloth_id in cloth_ids:
