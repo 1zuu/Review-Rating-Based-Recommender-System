@@ -6,6 +6,10 @@ from variables import*
 from util import get_recommendation_data
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
+physical_devices = tf.config.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
 from tensorflow import keras
 from keras.layers import Input, Embedding, Dense, Flatten, Concatenate
 from keras.models import Model, model_from_json, load_model
@@ -13,6 +17,7 @@ from keras.optimizers import SGD
 
 import logging
 logging.getLogger('tensorflow').disabled = True
+
 
 class RecommenderSystem(object):
     def __init__(self, data):

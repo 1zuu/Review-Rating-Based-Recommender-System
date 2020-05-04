@@ -228,6 +228,7 @@ def create_dataset():
         ordered_cols.extend(cols[:-2])
         data = data[ordered_cols]
 
+        data = data.sort_values('USER ID')
         print("create db table")
         with engine.connect() as conn, conn.begin():
             data.to_sql(table_name, conn, if_exists='append', index=False)

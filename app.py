@@ -13,6 +13,13 @@ from flask import Flask
 from flask import jsonify
 from flask import request
 
+'''
+
+        python -W ignore app.py
+
+
+'''
+
 app = Flask(__name__)
 
 create_dataset()
@@ -21,7 +28,6 @@ recommenders = RecommenderSystem(data)
 recommenders.run()
 sentiments = SentimentAnalyser(data)
 sentiments.run()
-
 
 @app.route("/predict", methods=["POST"])
 def predict():
