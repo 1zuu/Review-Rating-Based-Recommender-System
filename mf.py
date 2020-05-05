@@ -124,8 +124,8 @@ class RecommenderSystem(object):
 
     def predict(self, user_id):
         data = self.data
-        cloth_ids = data['Cloth ID'].values
-        alread_rated_cloths = data[data['USER ID'] == user_id]['Cloth ID'].values
+        cloth_ids = data['cloth_id'].values
+        alread_rated_cloths = data[data['user_id'] == user_id]['cloth_id'].values
         cloth_ids = set(cloth_ids)
         rating_ids = []
         for cloth_id in cloth_ids:

@@ -1,7 +1,7 @@
 import os
 alpha = 0.7
-table_name = 'bellarena_ai'
-db_url = 'mysql://root:1234@localhost/Bellarena'
+table_name = 'ecloths'
+db_url = 'mysql://root:@localhost/bellarena'
 #Sentiment analysis data
 seed = 42
 vocab_size = 15000

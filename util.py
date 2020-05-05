@@ -137,10 +137,10 @@ def balance_test_data(reviews,labels):
     return reviews , labels
 
 def get_reviews_for_id(data, cloth_id):
-    cloth_ids = data['Cloth ID']
+    cloth_ids = data['cloth_id']
     while True:
         if cloth_id < max(cloth_ids) + 1:
-            cloth_id_data = data[data['Cloth ID'] == cloth_id]
+            cloth_id_data = data[data['cloth_id'] == cloth_id]
             reviews = preprocessed_data(cloth_id_data['Review Text'].values)
             labels = cloth_id_data['Recommended IND'].values
             break
@@ -148,12 +148,12 @@ def get_reviews_for_id(data, cloth_id):
     return reviews, labels
 
 def get_user_id(data):
-    user_ids = set(data['USER ID'])
+    user_ids = set(data['user_id'])
     while True:
-        user_id = int(input("Enter user Id :"))
+        user_id = int(input("Enter user_id :"))
         if user_id in user_ids:
             return user_id
-        print("Please enter Valid User ID below {}!".format(len(user_ids)))
+        print("Please enter Valid user_id below {}!".format(len(user_ids)))
 
 def fill_nan_data(data):
     data_copy = data.copy()
@@ -194,12 +194,12 @@ def create_new_user_ids(filter_data):
         user_tuple = (devision_name, department_name, class_name, age)
         return int(new_ids[user_tuple])
 
-    filter_data['USER ID'] = filter_data.apply(user_id_row, axis=1)
+    filter_data['user_id'] = filter_data.apply(user_id_row, axis=1)
     return filter_data
 
 def get_recommendation_data(data):
-    user_ids = data['USER ID'].to_numpy()
-    cloth_ids = data['Cloth ID'].to_numpy()
+    user_ids = data['user_id'].to_numpy()
+    cloth_ids = data['cloth_id'].to_numpy()
     ratings = data['Rating'].to_numpy(dtype=np.float64)
     return user_ids, cloth_ids,ratings
 
@@ -228,7 +228,7 @@ def create_dataset():
         ordered_cols.extend(cols[:-2])
         data = data[ordered_cols]
 
-        data = data.sort_values('USER ID')
+        data = data.sort_values('user_id')
         print("create db table")
         with engine.connect() as conn, conn.begin():
             data.to_sql(table_name, conn, if_exists='append', index=False)
@@ -253,7 +253,7 @@ def rename_cloth_ids(filter_data):
     def update_cloth_ids(row, id_map=id_map):
         x = row['Clothing ID']
         return id_map[x]
-    filter_data['Cloth ID'] = filter_data.apply(update_cloth_ids, axis=1)
+    filter_data['cloth_id'] = filter_data.apply(update_cloth_ids, axis=1)
 
 def get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids):
     data_tuple = []
@@ -272,4 +272,4 @@ def get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids):
 
 def visualize_scores(data_tuple):
     for ids, final_score in data_tuple:
-        print("cloth id : {} , prediction score : {}".format(ids, final_score))
+        print("cloth_id : {} , prediction score : {}".format(ids, final_score))
