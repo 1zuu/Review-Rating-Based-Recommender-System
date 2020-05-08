@@ -32,14 +32,13 @@ class myCallback(keras.callbacks.Callback):
             self.model.stop_training = True
 
 class SentimentAnalyser:
-    def __init__(self,data):
+    def __init__(self):
+        data, Ytrain,Ytest,Xtrain,Xtest = get_sentiment_data()
+        self.Xtrain = Xtrain
+        self.Ytrain = Ytrain
+        self.Xtest  = Xtest
+        self.Ytest  = Ytest
         self.data = data
-        if not os.path.exists(sentiment_weights):
-            Ytrain,Ytest,Xtrain,Xtest = get_sentiment_data(data)
-            self.Xtrain = Xtrain
-            self.Ytrain = Ytrain
-            self.Xtest  = Xtest
-            self.Ytest  = Ytest
 
     def tokenizing_data(self):
         tokenizer = Tokenizer(num_words = vocab_size, oov_token=oov_tok)

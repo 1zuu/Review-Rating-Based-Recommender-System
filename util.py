@@ -13,12 +13,13 @@ from variables import*
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 from collections import Counter
-from variables import alpha, validation_split
+from variables import alpha, validation_split, table_name, db_url
 import math
 from sqlalchemy import create_engine
 import sqlalchemy
 
-def get_sentiment_data(data):
+def get_sentiment_data():
+    data = pd.read_sql_table(table_name, db_url)
     Nval = int(len(data) * validation_split)
     train_data, test_data = data[:-Nval], data[-Nval:]
     train_labels  = train_data['review_label'].values
@@ -26,7 +27,7 @@ def get_sentiment_data(data):
 
     train_reviews = preprocessed_data(train_data['review_text'].values)
     test_reviews  = preprocessed_data(test_data['review_text'].values)
-    return train_labels,test_labels,train_reviews,test_reviews
+    return data, train_labels,test_labels,train_reviews,test_reviews
 
 def lemmatization(lemmatizer,sentence):
     lem = [lemmatizer.lemmatize(k) for k in sentence]
@@ -198,11 +199,12 @@ def create_new_user_ids(filter_data):
     filter_data['user_id'] = filter_data.apply(user_id_row, axis=1)
     return filter_data
 
-def get_recommendation_data(data):
+def get_recommendation_data():
+    data = pd.read_sql_table(table_name, db_url)
     user_ids = data['user_id'].to_numpy()
     cloth_ids = data['cloth_id'].to_numpy()
     ratings = data['rating'].to_numpy(dtype=np.float64)
-    return user_ids, cloth_ids,ratings
+    return data, user_ids, cloth_ids,ratings
 
 def create_dataset():
     engine = create_engine(db_url)

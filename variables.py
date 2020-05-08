@@ -17,6 +17,8 @@ denseS = 64
 size_output = 1
 validation_split = 0.15
 bias = 0.21600911256083669
+tokenizer_obj_path = 'data/tokenizer.pickle'
+sentiment_weights = "data/sentiment_model.h5"
 
 #Recommender System data
 max_recommendes = 10
@@ -31,12 +33,7 @@ R_out = 1
 batch_sizeR = 128
 num_epochsR = 20
 recommendation_data = "data/recommendation_data"
-rating_params_path = "data/recommendation_data/rating_params/rating_params_{}.pickle"
-recommender_weights = "data/recommendation_data/recommender_weights/recommender_weights_{}.h5"
-Rlayer_api_dir = "data/recommender model api"
+recommender_weights = "data/recommendation_data/recommender_weights_{}.h5"
 
 #Data paths and weights
-tokenizer_obj_path = 'data/tokenizer.pickle'
-sentiment_weights = "data/sentiment_model.h5"
-Slayer_api_dir = "data/sentiment model api"
 eclothing_data = 'data/Womens Clothing E-Commerce Reviews.csv'

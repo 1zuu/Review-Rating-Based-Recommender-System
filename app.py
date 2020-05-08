@@ -1,6 +1,10 @@
 import os
 import json
 import pandas as pd
+
+# import keras.backend.tensorflow_backend as tb
+# tb._SYMBOLIC_SCOPE.value = True
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from sentiment_analyser import SentimentAnalyser
 import logging
@@ -14,6 +18,8 @@ from flask import jsonify
 from flask import request
 from apscheduler.schedulers.background import BackgroundScheduler
 scheduler = BackgroundScheduler()
+
+
 '''
         python -W ignore app.py
 
@@ -22,16 +28,16 @@ scheduler = BackgroundScheduler()
 app = Flask(__name__)
 
 create_dataset()
-data = pd.read_sql_table(table_name, db_url)
-default_data = pd.read_sql_table(table_name, db_url)
+# default_data = pd.read_sql_table(table_name, db_url)
 
-recommenders = RecommenderSystem(data)
+recommenders = RecommenderSystem()
 recommenders.run()
-sentiments = SentimentAnalyser(data)
+sentiments = SentimentAnalyser()
 sentiments.run()
 
 
 def train_task():
+    recommenders = RecommenderSystem()
     recommenders.run_finetune_mf()
 
 @app.route("/predict", methods=["POST"])
@@ -48,6 +54,6 @@ def predict():
     return jsonify(response)
 
 if __name__ == "__main__":
-    scheduler.add_job(func=train_task, trigger="interval", seconds=600)
+    scheduler.add_job(func=train_task, trigger="interval", seconds=100)
     scheduler.start()
-    app.run(debug=True)
+    app.run(debug=True, threaded=False)
