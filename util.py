@@ -13,19 +13,19 @@ from variables import*
 from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 from collections import Counter
-from variables import alpha
+from variables import alpha, validation_split
 import math
 from sqlalchemy import create_engine
 import sqlalchemy
 
 def get_sentiment_data(data):
-    print("Upsampling data !!!")
-    train_data, test_data = upsample_data(data)
-    train_labels  = train_data['Recommended IND'].values
-    test_labels   = test_data['Recommended IND'].values
+    Nval = int(len(data) * validation_split)
+    train_data, test_data = data[:-Nval], data[-Nval:]
+    train_labels  = train_data['review_label'].values
+    test_labels   = test_data['review_label'].values
 
-    train_reviews = preprocessed_data(train_data['Review Text'].values)
-    test_reviews  = preprocessed_data(test_data['Review Text'].values)
+    train_reviews = preprocessed_data(train_data['review_text'].values)
+    test_reviews  = preprocessed_data(test_data['review_text'].values)
     return train_labels,test_labels,train_reviews,test_reviews
 
 def lemmatization(lemmatizer,sentence):
@@ -50,7 +50,7 @@ def preprocess_one(review):
     return updated_review
 
 def preprocessed_text_column(row):
-    review = str(row['Review Text'])
+    review = str(row['review_text'])
     lemmatizer = WordNetLemmatizer()
     tokenizer = RegexpTokenizer(r'\w+')
     stopwords_list = stopwords.words('english')
@@ -64,8 +64,8 @@ def preprocessed_text_column(row):
     return updated_review
 
 def upsample_data(data):
-    data_majority = data[data['Recommended IND'] == 1]
-    data_minority = data[data['Recommended IND'] == 0]
+    data_majority = data[data['review_label'] == 1]
+    data_minority = data[data['review_label'] == 0]
 
     # bias = data_minority.shape[0]/data_majority.shape[0]
 
@@ -78,14 +78,14 @@ def upsample_data(data):
     train = shuffle(train)
     test = shuffle(test)
 
-    print('positive data in training:',(train['Recommended IND'] == 1).sum())
-    print('negative data in training:',(train['Recommended IND'] == 0).sum())
-    print('positive data in test:',(test['Recommended IND'] == 1).sum())
-    print('negative data in test:',(test['Recommended IND'] == 0).sum())
+    print('positive data in training:',(train['review_label'] == 1).sum())
+    print('negative data in training:',(train['review_label'] == 0).sum())
+    print('positive data in test:',(test['review_label'] == 1).sum())
+    print('negative data in test:',(test['review_label'] == 0).sum())
 
     # Separate majority and minority classes in training data for up sampling
-    data_majority = train[train['Recommended IND'] == 1]
-    data_minority = train[train['Recommended IND'] == 0]
+    data_majority = train[train['review_label'] == 1]
+    data_minority = train[train['review_label'] == 0]
 
     print("majority class before upsample:",data_majority.shape)
     print("minority class before upsample:",data_minority.shape)
@@ -100,12 +100,13 @@ def upsample_data(data):
     train_data_upsampled = pd.concat([data_majority, data_minority_upsampled])
 
     # Display new class counts
-    print("After upsampling\n",train_data_upsampled['Recommended IND'].value_counts(),sep = "")
+    print("After upsampling\n",train_data_upsampled['review_label'].value_counts(),sep = "")
     train_data_upsampled = shuffle(train_data_upsampled)
 
     train_data_upsampled = train_data_upsampled.dropna(axis = 0, how ='any')
     test = test.dropna(axis = 0, how ='any')
-    return train_data_upsampled, test
+    bigdata = pd.concat([train_data_upsampled, test], ignore_index=True, sort =False)
+    return bigdata
 
 def preprocessed_data(reviews):
     updated_reviews = []
@@ -141,8 +142,8 @@ def get_reviews_for_id(data, cloth_id):
     while True:
         if cloth_id < max(cloth_ids) + 1:
             cloth_id_data = data[data['cloth_id'] == cloth_id]
-            reviews = preprocessed_data(cloth_id_data['Review Text'].values)
-            labels = cloth_id_data['Recommended IND'].values
+            reviews = preprocessed_data(cloth_id_data['review_text'].values)
+            labels = cloth_id_data['review_label'].values
             break
 
     return reviews, labels
@@ -172,10 +173,10 @@ def fill_nan_data(data):
     return data_copy
 
 def create_new_user_ids(filter_data):
-    devision_name = filter_data['Division Name'].values
-    department_name = filter_data['Department Name'].values
-    class_name = filter_data['Class Name'].values
-    age = filter_data['Age'].values
+    devision_name = filter_data['devision_name'].values
+    department_name = filter_data['department_name'].values
+    class_name = filter_data['class_name'].values
+    age = filter_data['age'].values
 
     new_ids = {}
     id_idx = 0
@@ -186,10 +187,10 @@ def create_new_user_ids(filter_data):
            id_idx += 1
 
     def user_id_row(row, new_ids=new_ids):
-        devision_name = row['Division Name']
-        department_name = row['Department Name']
-        class_name = row['Class Name']
-        age = row['Age']
+        devision_name = row['devision_name']
+        department_name = row['department_name']
+        class_name = row['class_name']
+        age = row['age']
 
         user_tuple = (devision_name, department_name, class_name, age)
         return int(new_ids[user_tuple])
@@ -200,7 +201,7 @@ def create_new_user_ids(filter_data):
 def get_recommendation_data(data):
     user_ids = data['user_id'].to_numpy()
     cloth_ids = data['cloth_id'].to_numpy()
-    ratings = data['Rating'].to_numpy(dtype=np.float64)
+    ratings = data['rating'].to_numpy(dtype=np.float64)
     return user_ids, cloth_ids,ratings
 
 def create_dataset():
@@ -216,6 +217,8 @@ def create_dataset():
         filter_data = create_new_user_ids(filter_data)
 
         filter_data.drop(['ID', 'Clothing ID'], axis=1, inplace=True)
+
+        filter_data['rating'] = filter_data['rating'].astype(np.float32)
         filter_data = shuffle(filter_data)
 
         data = filter_data.copy()
@@ -228,6 +231,8 @@ def create_dataset():
         ordered_cols.extend(cols[:-2])
         data = data[ordered_cols]
 
+        print("Upsampling data !!!")
+        data = upsample_data(data)
         data = data.sort_values('user_id')
         print("create db table")
         with engine.connect() as conn, conn.begin():
@@ -260,6 +265,8 @@ def get_final_score(recommender_scores, sentiment_scores, rec_cloth_ids):
     for r, s, ids in zip(recommender_scores, sentiment_scores, rec_cloth_ids):
         if math.isnan(r):
             final_score = round(s, 3)
+        elif math.isnan(s):
+            final_score = round(r, 3)
         else:
             final_score = round(alpha * s + (1 - alpha) * r, 3)
         data_tuple.append((ids, final_score))

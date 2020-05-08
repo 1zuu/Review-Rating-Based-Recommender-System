@@ -12,11 +12,10 @@ from util import get_final_score, create_dataset
 from flask import Flask
 from flask import jsonify
 from flask import request
-
+from apscheduler.schedulers.background import BackgroundScheduler
+scheduler = BackgroundScheduler()
 '''
-
         python -W ignore app.py
-
 
 '''
 
@@ -24,10 +23,16 @@ app = Flask(__name__)
 
 create_dataset()
 data = pd.read_sql_table(table_name, db_url)
+default_data = pd.read_sql_table(table_name, db_url)
+
 recommenders = RecommenderSystem(data)
 recommenders.run()
 sentiments = SentimentAnalyser(data)
 sentiments.run()
+
+
+def train_task():
+    recommenders.run_finetune_mf()
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -43,4 +48,6 @@ def predict():
     return jsonify(response)
 
 if __name__ == "__main__":
+    scheduler.add_job(func=train_task, trigger="interval", seconds=600)
+    scheduler.start()
     app.run(debug=True)

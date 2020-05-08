@@ -56,12 +56,12 @@ class SentimentAnalyser:
 
     def embedding_model(self):
         inputs = Input(shape=(max_length,))
-        x = Embedding(output_dim=embedding_dimS, input_dim=vocab_size, input_length=max_length)(inputs)
-        x = Bidirectional(LSTM(size_lstm))(x)
-        x = Dense(denseS, activation='relu')(x)
-        x = Dense(denseS, activation='relu')(x)
-        x = Dense(denseS, activation='relu')(x)
-        outputs = Dense(size_output, activation='sigmoid')(x)
+        x = Embedding(output_dim=embedding_dimS, input_dim=vocab_size, input_length=max_length, name='embedding')(inputs)
+        x = Bidirectional(LSTM(size_lstm), name='bidirectional_lstm')(x)
+        x = Dense(denseS, activation='relu', name='dense1')(x)
+        x = Dense(denseS, activation='relu', name='dense2')(x)
+        x = Dense(denseS, activation='relu', name='dense3')(x)
+        outputs = Dense(size_output, activation='sigmoid', name='dense_out')(x)
 
         model = Model(inputs=inputs, outputs=outputs)
         self.model = model
