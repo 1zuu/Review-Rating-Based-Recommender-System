@@ -2,8 +2,8 @@ import os
 import json
 import pandas as pd
 
-# import keras.backend.tensorflow_backend as tb
-# tb._SYMBOLIC_SCOPE.value = True
+os.mkdir(recommendation_data)
+os.mkdir(sentiment_data)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from sentiment_analyser import SentimentAnalyser
@@ -18,7 +18,6 @@ from flask import jsonify
 from flask import request
 from apscheduler.schedulers.background import BackgroundScheduler
 scheduler = BackgroundScheduler()
-
 
 '''
         python -W ignore app.py
