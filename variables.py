@@ -2,7 +2,7 @@ import os
 alpha = 0.7
 table_name = 'ecloths'
 # default_table_name =
-db_url = 'mysql://root:Isuru767922513@localhost/bellarena'
+db_url = 'mysql+pymysql://root:maneeboi@localhost:3306/bellarena'
 #Sentiment analysis data
 seed = 42
 vocab_size = 15000
@@ -10,7 +10,7 @@ max_length = 120
 embedding_dimS = 512
 trunc_type = 'post'
 oov_tok = "<OOV>"
-num_epochs = 2
+num_epochs = 10
 batch_size = 128
 size_lstm  = 256
 denseS = 64
@@ -31,7 +31,7 @@ denseR = 512
 R_hidden = 64
 R_out = 1
 batch_sizeR = 128
-num_epochsR = 20
+num_epochsR = 100
 recommendation_data = "data/recommendation_data"
 recommender_weights = "data/recommendation_data/recommender_weights_{}.h5"
 

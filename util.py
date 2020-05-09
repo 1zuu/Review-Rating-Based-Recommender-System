@@ -201,9 +201,9 @@ def create_new_user_ids(filter_data):
 
 def get_recommendation_data():
     data = pd.read_sql_table(table_name, db_url)
-    user_ids = data['user_id'].to_numpy()
-    cloth_ids = data['cloth_id'].to_numpy()
-    ratings = data['rating'].to_numpy(dtype=np.float64)
+    user_ids = data['user_id'].values
+    cloth_ids = data['cloth_id'].values
+    ratings = data['rating'].values.astype(np.float64)
     return data, user_ids, cloth_ids,ratings
 
 def create_dataset():

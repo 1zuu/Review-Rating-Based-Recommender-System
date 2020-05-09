@@ -9,8 +9,8 @@ from time import time
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 # tf.compat.v1.disable_eager_execution()
-physical_devices = tf.config.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
+#physical_devices = tf.config.list_physical_devices('GPU')
+#tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 # from tensorflow import keras
 from tensorflow.keras.models import load_model
@@ -38,7 +38,6 @@ class RecommenderSystem(object):
         current_time = str(time()).split('.')[0]
         self.recommender_weights = recommender_weights.format(current_time)
 
-        print(len(self.ratings))
         Ntrain = int(cutoff * len(self.ratings))
         self.train_user_ids = self.user_ids[:Ntrain]
         self.train_cloth_ids = self.cloth_ids[:Ntrain]
@@ -94,7 +93,7 @@ class RecommenderSystem(object):
                 [self.test_user_ids,self.test_cloth_ids],
                 self.test_ratings
                 ),
-            verbose=0
+            #verbose=0
             )
 
     def finetune_regressor(self):

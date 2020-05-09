@@ -54,6 +54,6 @@ def predict():
     return jsonify(response)
 
 if __name__ == "__main__":
-    scheduler.add_job(func=train_task, trigger="interval", seconds=100)
-    scheduler.start()
+#    scheduler.add_job(func=train_task, trigger="interval", seconds=100)
+#    scheduler.start()
     app.run(debug=True, threaded=False)
