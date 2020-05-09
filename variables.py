@@ -1,9 +1,7 @@
 import os
 alpha = 0.7
 table_name = 'ecloths'
-# default_table_name =
-# db_url = 'mysql+pymysql://root:maneeboi@localhost:3306/bellarena'
-db_url = 'mysql://root:Isuru767922513@localhost/bellarena'
+db_url = 'mysql+pymysql://root:maneeboi@localhost:3306/bellarena'
 #Sentiment analysis data
 seed = 42
 vocab_size = 15000
