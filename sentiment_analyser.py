@@ -50,8 +50,6 @@ class SentimentAnalyser:
         Xtest_seq  = tokenizer.texts_to_sequences(self.Xtest)
         self.Xtest_pad = pad_sequences(Xtest_seq, maxlen=max_length)
         self.tokenizer = tokenizer
-        with open(tokenizer_obj_path, 'wb') as handle:
-            pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     def embedding_model(self):
         inputs = Input(shape=(max_length,))
@@ -66,9 +64,6 @@ class SentimentAnalyser:
         self.model = model
 
     def load_model(self):
-        with open(tokenizer_obj_path, 'rb') as handle:
-            self.tokenizer = pickle.load(handle)
-
         loaded_model = load_model(sentiment_weights)
         loaded_model.compile(
                         loss='binary_crossentropy',
@@ -97,10 +92,10 @@ class SentimentAnalyser:
         self.model.save(sentiment_weights)
 
     def run(self):
+        self.tokenizing_data()
         if os.path.exists(sentiment_weights):
             self.load_model()
         else:
-            self.tokenizing_data()
             self.embedding_model()
             self.train_model(bias)
             self.save_model()

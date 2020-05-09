@@ -2,7 +2,7 @@ import os
 alpha = 0.7
 table_name = 'ecloths'
 # default_table_name =
-db_url = 'mysql://root:@localhost/bellarena'
+db_url = 'mysql://root:Isuru767922513@localhost/bellarena'
 #Sentiment analysis data
 seed = 42
 vocab_size = 15000
@@ -17,8 +17,8 @@ denseS = 64
 size_output = 1
 validation_split = 0.15
 bias = 0.21600911256083669
-tokenizer_obj_path = 'data/tokenizer.pickle'
-sentiment_weights = "data/sentiment_model.h5"
+sentiment_data = "data/sentiment_data"
+sentiment_weights = "data/sentiment_data/sentiment_model.h5"
 
 #Recommender System data
 max_recommendes = 10
