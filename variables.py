@@ -2,7 +2,8 @@ import os
 alpha = 0.7
 table_name = 'ecloths'
 # default_table_name =
-db_url = 'mysql+pymysql://root:maneeboi@localhost:3306/bellarena'
+# db_url = 'mysql+pymysql://root:maneeboi@localhost:3306/bellarena'
+db_url = 'mysql://root:Isuru767922513@localhost/bellarena'
 #Sentiment analysis data
 seed = 42
 vocab_size = 15000
@@ -31,9 +32,10 @@ denseR = 512
 R_hidden = 64
 R_out = 1
 batch_sizeR = 128
-num_epochsR = 100
 recommendation_data = "data/recommendation_data"
-recommender_weights = "data/recommendation_data/recommender_weights_{}.h5"
+recommender_weights = "data/recommendation_data/recommender_weights.h5"
+num_epochsR = 20 if os.path.exists(recommender_weights) else 100
+verbose = 0 if os.path.exists(recommender_weights) else 1
 
 #Data paths and weights
 eclothing_data = 'data/Womens Clothing E-Commerce Reviews.csv'

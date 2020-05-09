@@ -9,8 +9,9 @@ from time import time
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 # tf.compat.v1.disable_eager_execution()
-#physical_devices = tf.config.list_physical_devices('GPU')
-#tf.config.experimental.set_memory_growth(physical_devices[0], True)
+if tf.config.list_physical_devices('GPU'):
+    physical_devices = tf.config.list_physical_devices('GPU')
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 # from tensorflow import keras
 from tensorflow.keras.models import load_model
@@ -35,8 +36,6 @@ class RecommenderSystem(object):
         print("{} users and {} cloths".format(self.n_users, self.n_cloths))
 
     def split_data(self):
-        current_time = str(time()).split('.')[0]
-        self.recommender_weights = recommender_weights.format(current_time)
 
         Ntrain = int(cutoff * len(self.ratings))
         self.train_user_ids = self.user_ids[:Ntrain]
@@ -83,7 +82,8 @@ class RecommenderSystem(object):
                 optimizer='adam')
                 # optimizer=SGD(lr=lr, momentum=mom))
         # self.model.summary()
-
+        print(verbose)
+        print(num_epochsR)
         self.model.fit(
             [self.train_user_ids,self.train_cloth_ids],
             self.train_ratings,
@@ -93,7 +93,7 @@ class RecommenderSystem(object):
                 [self.test_user_ids,self.test_cloth_ids],
                 self.test_ratings
                 ),
-            #verbose=0
+            verbose=verbose
             )
 
     def finetune_regressor(self):
@@ -120,12 +120,11 @@ class RecommenderSystem(object):
 
 
     def save_model(self):
-        self.model.save(self.recommender_weights)
+        self.model.save(recommender_weights)
 
     def load_model(self, weight_path=None):
-        if weight_path:
-            self.recommender_weights = weight_path
-        loaded_model = load_model(self.recommender_weights)
+
+        loaded_model = load_model(recommender_weights)
 
         loaded_model.compile(
                 loss='mse',
@@ -134,9 +133,8 @@ class RecommenderSystem(object):
         self.model = loaded_model
     def run(self):
         self.split_data()
-        if len(os.listdir(recommendation_data)) >= 1:
-            weight_path = os.path.join(recommendation_data, os.listdir(recommendation_data)[-1])
-            self.load_model(weight_path)
+        if os.path.exists(recommender_weights):
+            self.load_model()
         else:
             print("Training")
             self.regressor()
@@ -145,8 +143,7 @@ class RecommenderSystem(object):
 
     def run_finetune_mf(self):
         print("Fine tuning")
-        weight_path = os.path.join(recommendation_data, os.listdir(recommendation_data)[-1])
-        self.load_model(weight_path)
+        self.load_model()
         self.split_data()
 
         self.finetune_regressor()
