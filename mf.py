@@ -13,7 +13,6 @@ if tf.config.list_physical_devices('GPU'):
     physical_devices = tf.config.list_physical_devices('GPU')
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-# from tensorflow import keras
 from tensorflow.keras.models import load_model
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input,Embedding, Dense, Flatten, Concatenate
@@ -33,7 +32,7 @@ class RecommenderSystem(object):
 
         self.n_users = len(set(self.user_ids))
         self.n_cloths = len(set(self.cloth_ids))
-        print("{} users and {} cloths".format(self.n_users, self.n_cloths))
+        # print("{} users and {} cloths".format(self.n_users, self.n_cloths))
 
     def split_data(self):
 
@@ -81,7 +80,6 @@ class RecommenderSystem(object):
                 loss='mse',
                 optimizer='adam')
                 # optimizer=SGD(lr=lr, momentum=mom))
-        # self.model.summary()
         print(verbose)
         print(num_epochsR)
         self.model.fit(

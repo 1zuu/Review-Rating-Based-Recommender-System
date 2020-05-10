@@ -2,15 +2,14 @@ import os
 import json
 import pandas as pd
 
-os.mkdir(recommendation_data)
-os.mkdir(sentiment_data)
+from variables import *
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from sentiment_analyser import SentimentAnalyser
 import logging
 logging.getLogger('tensorflow').disabled = True
 from mf import RecommenderSystem
-from variables import *
+
 from util import get_final_score, create_dataset
 
 from flask import Flask
@@ -27,8 +26,6 @@ scheduler = BackgroundScheduler()
 app = Flask(__name__)
 
 create_dataset()
-# default_data = pd.read_sql_table(table_name, db_url)
-
 recommenders = RecommenderSystem()
 recommenders.run()
 sentiments = SentimentAnalyser()
@@ -53,6 +50,6 @@ def predict():
     return jsonify(response)
 
 if __name__ == "__main__":
-    scheduler.add_job(func=train_task, trigger="interval", seconds=300)
+    scheduler.add_job(func=train_task, trigger="interval", seconds=learning_interval)
     scheduler.start()
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=False)
+    app.run(debug=True, host=host, port= port, threaded=False)

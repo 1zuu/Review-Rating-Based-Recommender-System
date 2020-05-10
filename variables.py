@@ -1,7 +1,11 @@
 import os
+host = '0.0.0.0'
+port = 5000
 alpha = 0.7
+learning_interval = 300
 table_name = 'ecloths'
 db_url = 'mysql+pymysql://root:maneeboi@localhost:3306/bellarena'
+
 #Sentiment analysis data
 seed = 42
 vocab_size = 15000
